@@ -45,121 +45,121 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-    ##############
-    # Python tests
-    ##############
-    - name: Setup Python 3.12
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
+      ##############
+      # Python tests
+      ##############
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
 
-    - name: Install Dependencies (Python)
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install .[dev]
+      - name: Install Dependencies (Python)
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install .[dev]
 
-    - name: Create CA symlink to use RH's certifi on ubuntu-latest
-      run: |
-        sudo mkdir -p /etc/pki/tls/certs
-        sudo ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+      - name: Create CA symlink to use RH's certifi on ubuntu-latest
+        run: |
+          sudo mkdir -p /etc/pki/tls/certs
+          sudo ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
 
-    - name: Running Unit Tests (Python)
-      run: |
-        coverage run --rcfile=setup.cfg -m ansible_ai_connect.manage test ansible_ai_connect
-        coverage xml
-        coverage report --rcfile=setup.cfg --format=markdown > code-coverage-results.md
+      - name: Running Unit Tests (Python)
+        run: |
+          coverage run --rcfile=setup.cfg -m ansible_ai_connect.manage test ansible_ai_connect
+          coverage xml
+          coverage report --rcfile=setup.cfg --format=markdown > code-coverage-results.md
 
-    # See https://sonarsource.atlassian.net/browse/SONARPY-1203
-    - name: Fix paths in coverage file
-      run: |
-        sed -i "s,/home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/,/github/workspace/,g" coverage.xml
+      # See https://sonarsource.atlassian.net/browse/SONARPY-1203
+      - name: Fix paths in coverage file
+        run: |
+          sed -i "s,/home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/,/github/workspace/,g" coverage.xml
 
-    ##################
-    # TypeScript tests
-    ##################
-    - name: Use Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '22.x'
-        cache: 'npm'
-        cache-dependency-path: ./ansible_ai_connect_admin_portal/package-lock.json
+      ##################
+      # TypeScript tests
+      ##################
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22.x"
+          cache: "npm"
+          cache-dependency-path: ./ansible_ai_connect_admin_portal/package-lock.json
 
-    - name: Install Dependencies (TypeScript)
-      run: npm ci
-      working-directory: ./ansible_ai_connect_admin_portal
+      - name: Install Dependencies (TypeScript)
+        run: npm ci
+        working-directory: ./ansible_ai_connect_admin_portal
 
-    - name: Running Unit Tests (TypeScript)
-      run: npm run test
-      working-directory: ./ansible_ai_connect_admin_portal
+      - name: Running Unit Tests (TypeScript)
+        run: npm run test
+        working-directory: ./ansible_ai_connect_admin_portal
 
-    ############################
-    # TypeScript tests (chatbot)
-    ############################
-    - name: Use Node.js (chatbot)
-      uses: actions/setup-node@v3
-      with:
-        node-version: '22.x'
-        cache: 'npm'
-        cache-dependency-path: ./ansible_ai_connect_chatbot/package-lock.json
+      ############################
+      # TypeScript tests (chatbot)
+      ############################
+      - name: Use Node.js (chatbot)
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22.x"
+          cache: "npm"
+          cache-dependency-path: ./ansible_ai_connect_chatbot/package-lock.json
 
-    - name: Install Dependencies (TypeScript) (chatbot)
-      run: npm ci
-      working-directory: ./ansible_ai_connect_chatbot
+      - name: Install Dependencies (TypeScript) (chatbot)
+        run: npm ci
+        working-directory: ./ansible_ai_connect_chatbot
 
-    - name: Install Chromium dependencies (chatbot)
-      run: npx playwright install-deps chromium
-      working-directory: ./ansible_ai_connect_chatbot
+      - name: Install Chromium dependencies (chatbot)
+        run: npx playwright install-deps chromium
+        working-directory: ./ansible_ai_connect_chatbot
 
-    - name: Install Chromium (chatbot)
-      run: npx playwright install chromium
-      working-directory: ./ansible_ai_connect_chatbot
+      - name: Install Chromium (chatbot)
+        run: npx playwright install chromium
+        working-directory: ./ansible_ai_connect_chatbot
 
-    - name: Running Unit Tests with code coverage (TypeScript) (chatbot)
-      run: npm run coverage
-      working-directory: ./ansible_ai_connect_chatbot
+      - name: Running Unit Tests with code coverage (TypeScript) (chatbot)
+        run: npm run coverage
+        working-directory: ./ansible_ai_connect_chatbot
 
-    #####################
-    # Upload coverage for SonarCloud
-    #####################
-    - name: Embed PR number in coverage.xml
-      if: github.event_name == 'pull_request'
-      run: |
-        sed -i '2i<!-- PR ${{ github.event.pull_request.number }} -->' coverage.xml
+      #####################
+      # Upload coverage for SonarCloud
+      #####################
+      - name: Embed PR number in coverage.xml
+        if: github.event_name == 'pull_request'
+        run: |
+          sed -i '2i<!-- PR ${{ github.event.pull_request.number }} -->' coverage.xml
 
-    - name: Upload coverage artifacts
-      if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage
-        path: |
-          coverage.xml
-          ansible_ai_connect_*/coverage/lcov.info
-          aap_chatbot/coverage/lcov.info
-        retention-days: 1
-        if-no-files-found: warn
+      - name: Upload coverage artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            coverage.xml
+            ansible_ai_connect_*/coverage/lcov.info
+            aap_chatbot/coverage/lcov.info
+          retention-days: 1
+          if-no-files-found: warn
 
-    ####################
-    # OpenAPI file check
-    ####################
-    - name: Ensure the OpenAPI file is up to date
-      run: |
-        make run-server &
-        sleep 10
-        make create-cachetable
-        make update-openapi-schema
-        git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.yaml
-        git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.json
+      ####################
+      # OpenAPI file check
+      ####################
+      - name: Ensure the OpenAPI file is up to date
+        run: |
+          make run-server &
+          sleep 10
+          make create-cachetable
+          make update-openapi-schema
+          git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.yaml
+          git diff --exit-code -- tools/openapi-schema/ansible-ai-connect-service.json
 
-    - name: Validate OpenAPI schema
-      run: |
-        python3 -c "
-        from openapi_spec_validator import validate_url
-        from openapi_spec_validator.validation.validators import OpenAPIV30SpecValidator
+      - name: Validate OpenAPI schema
+        run: |
+          python3 -c "
+          from openapi_spec_validator import validate_url
+          from openapi_spec_validator.validation.validators import OpenAPIV30SpecValidator
 
-        validate_url('http://localhost:8000/api/schema/', cls=OpenAPIV30SpecValidator)
-        "
+          validate_url('http://localhost:8000/api/schema/', cls=OpenAPIV30SpecValidator)
+          "
