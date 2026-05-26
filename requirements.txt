@@ -527,5 +527,5 @@ yarl==1.22.0
     # via aiohttp
 zipp==3.23.0
     # via importlib-metadata
-zope-interface==8.1.1
+zope-interface==8.5
     # via twisted
