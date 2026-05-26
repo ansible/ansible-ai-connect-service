@@ -219,7 +219,7 @@ requires-dist = [
     { name = "django-health-check", specifier = "~=3.17.0" },
     { name = "django-import-export", specifier = "~=3.2.0" },
     { name = "django-oauth-toolkit", specifier = "~=3.0.1" },
-    { name = "django-prometheus", specifier = "~=2.2.0" },
+    { name = "django-prometheus", specifier = "~=2.5.0" },
     { name = "django-test-migrations", specifier = "~=1.5.0" },
     { name = "djangorestframework", specifier = "~=3.15.2" },
     { name = "drf-spectacular", specifier = "~=0.29.0" },
@@ -1007,14 +1007,15 @@ wheels = [
 
 [[package]]
 name = "django-prometheus"
-version = "2.2.0"
+version = "2.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "django" },
     { name = "prometheus-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/63/12/5325fe5524938eae3beab9e49b48c50676bd20aace4f68daf978215d62d8/django-prometheus-2.2.0.tar.gz", hash = "sha256:240378a1307c408bd5fc85614a3a57f1ce633d4a222c9e291e2bbf325173b801", size = 24995, upload-time = "2021-12-19T18:18:41.393Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7b/c7/dc39c4c19f7b35e827a486d08376de1fad31c50decb26c56e32668314f13/django_prometheus-2.5.0.tar.gz", hash = "sha256:4837b3c3734d8350880839ab8235aafd250b668c348e159d4aecc3cbefeee53e", size = 26465, upload-time = "2026-05-26T19:04:00.77Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/26/dbf0111fb13540f35a93a201e1ec759cb7aeaa124665da9673ff51c86b7d/django_prometheus-2.2.0-py2.py3-none-any.whl", hash = "sha256:e6616770d8820b8834762764bf1b76ec08e1b98e72a6f359d488a2e15fe3537c", size = 29020, upload-time = "2021-12-19T18:18:39.515Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/5d/6ec3083ba69545696c962ae505a0e52e280e7592d4c278c2f3803cabb688/django_prometheus-2.5.0-py2.py3-none-any.whl", hash = "sha256:f15efb526cd53f9cf12da72dc55506322f5566b017a819ff27be1da302303134", size = 31801, upload-time = "2026-05-26T19:03:59.505Z" },
 ]
 
 [[package]]
