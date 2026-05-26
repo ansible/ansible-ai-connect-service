@@ -143,7 +143,7 @@ django-import-export==3.2.0
     # via ansible-ai-connect
 django-oauth-toolkit==3.0.1
     # via ansible-ai-connect
-django-prometheus==2.2.0
+django-prometheus==2.5.0
     # via ansible-ai-connect
 django-test-migrations==1.5.0
     # via ansible-ai-connect
