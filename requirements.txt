@@ -298,7 +298,7 @@ pexpect==4.9.0 ; sys_platform != 'win32'
     # via ipython
 pickleshare==0.7.5
     # via ipython
-platformdirs==4.5.1
+platformdirs==4.10.0
     # via black
 prometheus-client==0.23.1
     # via django-prometheus
