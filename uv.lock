@@ -232,7 +232,7 @@ requires-dist = [
     { name = "jinja2", specifier = "~=3.1.6" },
     { name = "jwcrypto", specifier = "~=1.5.7" },
     { name = "launchdarkly-server-sdk", specifier = "~=8.3.0" },
-    { name = "llama-stack-client", specifier = "==0.2.22" },
+    { name = "llama-stack-client", specifier = "==0.7.4" },
     { name = "openapi-spec-validator", marker = "extra == 'dev'" },
     { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "protobuf", specifier = "~=5.29.6" },
@@ -1652,7 +1652,7 @@ wheels = [
 
 [[package]]
 name = "llama-stack-client"
-version = "0.2.22"
+version = "0.7.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1671,9 +1671,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/60/80/4260816bfaaa889d515206c9df4906d08d405bf94c9b4d1be399b1923e46/llama_stack_client-0.2.22.tar.gz", hash = "sha256:9a0bc756b91ebd539858eeaf1f231c5e5c6900e1ea4fcced726c6717f3d27ca7", size = 318309, upload-time = "2025-09-16T19:43:33.212Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/81/ff/bf0de61f7b5dc96a34a8a876d23c5d16bdca84935acd3a9b7af068bc3f66/llama_stack_client-0.7.4.tar.gz", hash = "sha256:4b13d65ee1f5a1be5e628672596b36616b3212526e7d2dbc4179dbcb6860c167", size = 372959, upload-time = "2026-05-28T15:03:27.875Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/8e/1ebf6ac0dbb62b81038e856ed00768e283d927b14fcd614e3018a227092b/llama_stack_client-0.2.22-py3-none-any.whl", hash = "sha256:b260d73aec56fcfd8fa601b3b34c2f83c4fbcfb7261a246b02bbdf6c2da184fe", size = 369901, upload-time = "2025-09-16T19:43:32.089Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/90/a1149e962a89a8ecf0fdcf7dd621dff2a1937bc6fe77ca988e3d1b0cf22c/llama_stack_client-0.7.4-py3-none-any.whl", hash = "sha256:8001e13ba81f9421e22134b99ed8e43f8842a63773039e3b17ab6bf13b57a20b", size = 375337, upload-time = "2026-05-28T15:03:26.361Z" },
 ]
 
 [[package]]
