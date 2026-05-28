@@ -76,7 +76,7 @@
     "vite-plugin-static-copy": "^2.3.1",
     "vitest": "^3.0.7",
     "vitest-browser-react": "^0.0.4",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^5.0.0"
   },
   "overrides": {
     "minimatch": "^3.1.3",
