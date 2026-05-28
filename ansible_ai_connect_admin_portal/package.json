@@ -171,7 +171,7 @@
   "overrides": {
     "micromatch": "^4.0.8",
     "uuid": ">=14.0.0",
-    "minimatch": "^3.1.4",
+    "minimatch": "^10.0.0",
     "bfj": "^9.1.2",
     "flatted": "^3.4.2",
     "serialize-javascript": "^7.0.5",
