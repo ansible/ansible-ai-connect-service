@@ -124,6 +124,43 @@ jobs:
         working-directory: ./ansible_ai_connect_chatbot
 
       #####################
+      # Upload coverage to Codecov
+      #####################
+      - name: Upload Python coverage to Codecov
+        uses: codecov/codecov-action@0f8570b1a125f4937846a11fcfa3bcd548bd8c97 # v4.6.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          url: ${{ vars.CODECOV_URL }}
+          files: ./coverage.xml
+          flags: python
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload TypeScript Admin Portal coverage to Codecov
+        uses: codecov/codecov-action@0f8570b1a125f4937846a11fcfa3bcd548bd8c97 # v4.6.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          url: ${{ vars.CODECOV_URL }}
+          files: ./ansible_ai_connect_admin_portal/coverage/lcov.info
+          flags: typescript-admin-portal
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload TypeScript Chatbot coverage to Codecov
+        uses: codecov/codecov-action@0f8570b1a125f4937846a11fcfa3bcd548bd8c97 # v4.6.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          url: ${{ vars.CODECOV_URL }}
+          files: ./ansible_ai_connect_chatbot/coverage/lcov.info
+          flags: typescript-chatbot
+          disable_search: true
+          fail_ci_if_error: false
+
+      # Note: aap_chatbot is an intentional copy of ansible_ai_connect_chatbot (for AAP UI integration)
+      # and does not have separate test coverage generated in this workflow.
+      # Coverage for the chatbot functionality is tracked via the typescript-chatbot flag above.
+
+      #####################
       # Upload coverage for SonarCloud
       #####################
       - name: Embed PR number in coverage.xml
