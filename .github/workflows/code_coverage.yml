@@ -127,7 +127,7 @@ jobs:
       # Upload coverage to Codecov
       #####################
       - name: Upload Python coverage to Codecov
-        uses: codecov/codecov-action@0f8570b1a125f4937846a11fcfa3bcd548bd8c97 # v4.6.0
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           url: ${{ vars.CODECOV_URL }}
@@ -137,7 +137,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload TypeScript Admin Portal coverage to Codecov
-        uses: codecov/codecov-action@0f8570b1a125f4937846a11fcfa3bcd548bd8c97 # v4.6.0
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           url: ${{ vars.CODECOV_URL }}
@@ -147,7 +147,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload TypeScript Chatbot coverage to Codecov
-        uses: codecov/codecov-action@0f8570b1a125f4937846a11fcfa3bcd548bd8c97 # v4.6.0
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           url: ${{ vars.CODECOV_URL }}
