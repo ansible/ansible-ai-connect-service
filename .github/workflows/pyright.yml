@@ -20,7 +20,7 @@ jobs:
     - name: Setup Python 3.12
       uses: actions/setup-python@v4
       with:
-        python-version: '3.12'
+        python-version: '3.14'
     - name: install
       run: |
         pip install pyright django boto3 requests prometheus_client backoff django_prometheus django-health-check aiohttp ansible-lint ansible_anonymizer
