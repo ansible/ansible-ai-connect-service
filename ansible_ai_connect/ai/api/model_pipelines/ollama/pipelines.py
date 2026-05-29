@@ -131,14 +131,14 @@ def unwrap_role_answer(message: str, create_outline: bool) -> tuple[str, list[di
 def unwrap_message_with_yaml_answer(message: str) -> str:
     task: str = message_to_string(message)
 
-    m = re.search(r".*?```(yaml|yml|)\n+(.+)```", task, re.MULTILINE | re.DOTALL)
+    m = re.search(r"```(yaml|yml|)\n(.+?)```", task, re.MULTILINE | re.DOTALL)
     return m.group(2).strip() if m else ""
 
 
 def unwrap_playbook_answer(message: str) -> tuple[str, str]:
     task: str = message_to_string(message)
 
-    m = re.search(r".*?```(yaml|)\n+(.+)```(.*)", task, re.MULTILINE | re.DOTALL)
+    m = re.search(r"```(yaml|)\n(.+?)```(.*)", task, re.MULTILINE | re.DOTALL)
     if m:
         playbook = m.group(2).strip()
         outline = m.group(3).lstrip().strip()
@@ -150,7 +150,7 @@ def unwrap_playbook_answer(message: str) -> tuple[str, str]:
 def unwrap_task_answer(message: str) -> str:
     task: str = message_to_string(message)
 
-    m = re.search(r"```(yaml|)\n+(.+)```", task, re.MULTILINE | re.DOTALL)
+    m = re.search(r"```(yaml|)\n(.+?)```", task, re.MULTILINE | re.DOTALL)
     if m:
         task = m.group(2)
     return dedent(re.split(r"- name: .+\n", task)[-1]).rstrip()
