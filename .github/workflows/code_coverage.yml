@@ -156,15 +156,9 @@ jobs:
           disable_search: true
           fail_ci_if_error: false
 
-      - name: Upload AAP Chatbot coverage to Codecov
-        uses: codecov/codecov-action@0f8570b1a125f4937846a11fcfa3bcd548bd8c97 # v4.6.0
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          url: ${{ vars.CODECOV_URL }}
-          files: ./aap_chatbot/coverage/lcov.info
-          flags: aap-chatbot
-          disable_search: true
-          fail_ci_if_error: false
+      # Note: aap_chatbot is an intentional copy of ansible_ai_connect_chatbot (for AAP UI integration)
+      # and does not have separate test coverage generated in this workflow.
+      # Coverage for the chatbot functionality is tracked via the typescript-chatbot flag above.
 
       #####################
       # Upload coverage for SonarCloud

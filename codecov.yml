@@ -40,10 +40,9 @@ flags:
     paths:
       - ansible_ai_connect_chatbot/
 
-  aap-chatbot:
-    carryforward: true
-    paths:
-      - aap_chatbot/
+  # Note: aap_chatbot is an intentional copy of ansible_ai_connect_chatbot
+  # (for AAP UI integration) and does not have separate test coverage.
+  # Coverage is tracked via typescript-chatbot flag above.
 
 comment:
   layout: "reach,diff,flags,files"
