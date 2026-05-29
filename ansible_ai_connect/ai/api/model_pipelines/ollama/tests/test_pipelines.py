@@ -226,6 +226,26 @@ aws_region: "us-west-2"
         )
 
 
+class TestUnwrapAnswerFirstBlock(TestCase):
+    """The fenced-block extractors use linear (non-backtracking) regexes to avoid the
+    polynomial-runtime ReDoS flagged by SonarCloud (python:S5852). A side effect of the
+    bounded, lazy capture is that they now correctly extract only the *first* fenced
+    block instead of greedily spanning from the first to the last fence."""
+
+    def test_message_yaml_extracts_only_first_block(self):
+        answer = "```yaml\nfirst```\nmiddle\n```yaml\nsecond```\n"
+        self.assertEqual(unwrap_message_with_yaml_answer(answer), "first")
+
+    def test_playbook_extracts_only_first_block(self):
+        answer = "```\nfirst```\nmiddle\n```\nsecond```\n"
+        playbook, _outline = unwrap_playbook_answer(answer)
+        self.assertEqual(playbook, "first")
+
+    def test_task_extracts_only_first_block(self):
+        answer = "```\n- name: a\n  debug: x```\nmiddle\n```\n- name: b\n  debug: y```\n"
+        self.assertEqual(unwrap_task_answer(answer), "debug: x")
+
+
 class TestOllamaCompletionsPipeline(TestCase):
     def setUp(self):
         super().setUp()
