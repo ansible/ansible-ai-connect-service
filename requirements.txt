@@ -431,7 +431,7 @@ segment-analytics-python==2.2.3
     # via ansible-ai-connect
 semver==3.0.4
     # via launchdarkly-server-sdk
-service-identity==24.2.0
+service-identity==26.1.0
     # via twisted
 six==1.17.0
     # via
