@@ -31,7 +31,7 @@
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.0.0",
-    "axios": "^1.13.5",
+    "axios": "^1.16.1",
     "babel-jest": "^29.7.0",
     "babel-loader": "^8.2.3",
     "babel-preset-react-app": "^10.0.1",
@@ -74,7 +74,7 @@
     "tslib": "^2.6.2",
     "typescript": "^5.1.6",
     "webpack": "^5.64.4",
-    "webpack-dev-server": "^5.2.2",
+    "webpack-dev-server": "^5.2.4",
     "webpack-manifest-plugin": "^4.0.2",
     "webpack-mock-server": "^1.0.18",
     "workbox-webpack-plugin": "^6.4.1"
@@ -169,19 +169,13 @@
     ]
   },
   "overrides": {
-    "micromatch": "^4.0.8",
-    "uuid": ">=14.0.0",
-    "minimatch": "^3.1.4",
-    "bfj": "^9.1.2",
-    "flatted": "^3.4.2",
-    "serialize-javascript": "^7.0.5",
-    "http-proxy-agent": "^7.0.0",
-    "follow-redirects": ">=1.16.0",
+    "@babel/plugin-transform-modules-systemjs": ">=7.29.4",
     "@svgr/webpack": {
       "@svgr/plugin-svgo": {
         "svgo": "3.3.3"
       }
     },
+    "bfj": "^9.1.2",
     "css-minimizer-webpack-plugin": {
       "cssnano": {
         "cssnano-preset-default": {
@@ -192,6 +186,15 @@
       }
     },
     "fast-uri": ">=3.1.1",
-    "@babel/plugin-transform-modules-systemjs": ">=7.29.4"
+    "flatted": "^3.4.2",
+    "follow-redirects": ">=1.16.0",
+    "http-proxy-agent": "^7.0.0",
+    "micromatch": "^4.0.8",
+    "minimatch": "^3.1.4",
+    "qs": "6.15.2",
+    "serialize-javascript": "^7.0.5",
+    "shell-quote": "1.8.4",
+    "uuid": ">=14.0.0",
+    "ws": "8.21.0"
   }
 }
