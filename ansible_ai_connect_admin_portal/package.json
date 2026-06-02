@@ -177,6 +177,7 @@
     "serialize-javascript": "^7.0.5",
     "http-proxy-agent": "^7.0.0",
     "follow-redirects": ">=1.16.0",
+    "shell-quote": ">=1.8.4",
     "@svgr/webpack": {
       "@svgr/plugin-svgo": {
         "svgo": "3.3.3"
