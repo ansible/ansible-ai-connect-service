@@ -127,7 +127,7 @@ django==5.2.14
     #   social-auth-app-django
 django-allow-cidr==0.8.0
     # via ansible-ai-connect
-django-ansible-base==2026.1.26
+django-ansible-base==2026.6.2
     # via ansible-ai-connect
 django-crum==0.7.9
     # via django-ansible-base
