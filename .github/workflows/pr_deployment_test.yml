@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Wait for PR deployment completion
         run: bash ./.github/workflows/scripts/pr_deployment_test.sh wait_for_pr_deployment ${{ github.event.number }} ${{ secrets.PR_DEPLOY_CLUSTER_HOSTNAME }}
         shell: bash
@@ -24,7 +24,7 @@ jobs:
       pull-requests: write
     needs: pr_deplolyment_test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Trigger tests on PR deployment
       id: test_pr
       run: |
