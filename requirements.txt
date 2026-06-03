@@ -97,7 +97,7 @@ cryptography==46.0.7
     #   social-auth-core
 cython==3.2.2
     # via ansible-ai-connect
-daphne==4.2.1
+daphne==4.2.2
     # via ansible-ai-connect
 decorator==5.2.1
     # via ipython
