@@ -465,7 +465,7 @@ termcolor==3.2.0
     #   llama-stack-client
 tqdm==4.67.1
     # via llama-stack-client
-traitlets==5.14.3
+traitlets==5.15.1
     # via
     #   ipython
     #   matplotlib-inline
