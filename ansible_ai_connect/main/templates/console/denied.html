@@ -17,5 +17,7 @@
     <!-- It is safe to pass the value embedded in the host DOM -->
     <!-- as it is only used for display purposes and servers no other value -->
     <div id="user_name" hidden>{{user_name}}</div>
+    <!-- CSRF token for cross-origin proxy deployments where the cookie is unavailable -->
+    <div id="csrf_token" hidden>{{ csrf_token }}</div>
     <div id="has_subscription" hidden>{{rh_org_has_subscription}}</div>
 {% endblock content %}

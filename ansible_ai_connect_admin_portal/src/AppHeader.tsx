@@ -9,7 +9,7 @@ import {
 import { UserCircleIcon } from "@patternfly/react-icons";
 import { PageMastheadDropdown } from "./PageMastheadDropdown";
 import RedHatLogo from "./redhat-logo.svg";
-import { readCookie } from "./api/api";
+import { readCsrfCookie } from "./api/api";
 
 export interface AppHeaderProps {
   readonly userName: string;
@@ -27,7 +27,7 @@ export function AppHeader(props: AppHeaderProps) {
     const csrfInput = document.createElement("input");
     csrfInput.type = "hidden";
     csrfInput.name = "csrfmiddlewaretoken";
-    csrfInput.value = readCookie("csrftoken") || "";
+    csrfInput.value = readCsrfCookie() || "";
     form.appendChild(csrfInput);
 
     document.body.appendChild(form);

@@ -104,7 +104,7 @@ describe("TelemetrySettings", () => {
     expect(axios.post as jest.Mock).toBeCalledWith(
       API_TELEMETRY_PATH,
       { optOut: true },
-      { headers: { "X-CSRFToken": null } },
+      { headers: {} },
     );
   });
 
@@ -132,7 +132,7 @@ describe("TelemetrySettings", () => {
     expect(axios.post as jest.Mock).toBeCalledWith(
       API_TELEMETRY_PATH,
       { optOut: true },
-      { headers: { "X-CSRFToken": null } },
+      { headers: {} },
     );
 
     // Modals are added to the 'document.body' so perform a basic check for a known field.

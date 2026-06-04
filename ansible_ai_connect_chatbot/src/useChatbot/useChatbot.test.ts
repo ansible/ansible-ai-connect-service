@@ -1,6 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
-import { feedbackMessage, useChatbot } from "./useChatbot";
+import {
+  feedbackMessage,
+  readCookie,
+  readCsrfCookie,
+  useChatbot,
+} from "./useChatbot";
 import type { MessageProps } from "@patternfly/chatbot/dist/dynamic/Message";
 import { Sentiment } from "../Constants";
 import type { ChatFeedback } from "../types/Message";
@@ -12,6 +17,76 @@ const CONVERSATION_ID = "123e4567-e89b-12d3-a456-426614174000";
 vi.mock("@microsoft/fetch-event-source", () => ({
   fetchEventSource: vi.fn(),
 }));
+
+const clearCookies = () => {
+  for (const cookie of document.cookie.split(";")) {
+    const name = cookie.split("=")[0].trim();
+    if (name) {
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    }
+  }
+};
+
+describe("readCookie", () => {
+  beforeEach(clearCookies);
+  afterEach(clearCookies);
+
+  it("returns null when cookie is not present", () => {
+    expect(readCookie("csrftoken")).toBeNull();
+  });
+
+  it("extracts cookie value", () => {
+    document.cookie = "csrftoken=12345";
+    expect(readCookie("csrftoken")).toEqual("12345");
+  });
+
+  it("extracts correct cookie from multiple cookies", () => {
+    document.cookie = "other=abc";
+    document.cookie = "csrftoken=12345";
+    expect(readCookie("csrftoken")).toEqual("12345");
+  });
+
+  it("does not match partial cookie names", () => {
+    document.cookie = "csrftoken_extra=wrong";
+    expect(readCookie("csrftoken")).toBeNull();
+  });
+});
+
+// Browsers reject __Host- prefixed cookies on non-HTTPS pages, so we mock
+// document.cookie getter instead of setting real cookies.
+describe("readCsrfCookie", () => {
+  let cookieSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    cookieSpy = vi.spyOn(document, "cookie", "get");
+  });
+
+  afterEach(() => {
+    cookieSpy.mockRestore();
+  });
+
+  it("returns __Host-csrftoken when present", () => {
+    cookieSpy.mockReturnValue("__Host-csrftoken=prod_token");
+    expect(readCsrfCookie()).toEqual("prod_token");
+  });
+
+  it("falls back to csrftoken when __Host-csrftoken is absent", () => {
+    cookieSpy.mockReturnValue("csrftoken=dev_token");
+    expect(readCsrfCookie()).toEqual("dev_token");
+  });
+
+  it("prefers __Host-csrftoken over csrftoken", () => {
+    cookieSpy.mockReturnValue(
+      "csrftoken=dev_token; __Host-csrftoken=prod_token",
+    );
+    expect(readCsrfCookie()).toEqual("prod_token");
+  });
+
+  it("returns null when neither cookie is present", () => {
+    cookieSpy.mockReturnValue("");
+    expect(readCsrfCookie()).toBeNull();
+  });
+});
 
 describe("feedbackMessage", () => {
   it("should return a message with a thank you note for positive feedback", () => {

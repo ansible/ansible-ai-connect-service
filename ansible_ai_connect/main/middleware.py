@@ -19,7 +19,7 @@ import uuid
 
 from ansible_anonymizer import anonymizer
 from django.conf import settings
-from django.middleware.csrf import CsrfViewMiddleware
+from django.middleware.csrf import CsrfViewMiddleware, get_token
 from rest_framework.exceptions import ErrorDetail, PermissionDenied
 from segment import analytics
 from social_django.middleware import SocialAuthExceptionMiddleware
@@ -39,6 +39,99 @@ from ansible_ai_connect.healthcheck.version_info import VersionInfo
 
 logger = logging.getLogger(__name__)
 version_info = VersionInfo()
+
+
+class EnsureCsrfCookieMiddleware:
+    """Ensure every response carries a CSRF cookie so that JS clients
+    (chatbot, admin portal) can read it for X-CSRFToken headers.
+
+    This middleware handles two deployment modes:
+
+    1. **Standalone** (no gateway): calls get_token() to generate a CSRF
+       secret and set CSRF_COOKIE_NEEDS_UPDATE, so CsrfViewMiddleware
+       emits a Set-Cookie with the __Host-csrftoken cookie on every
+       response.
+
+    2. **Behind AAP gateway**: the gateway owns CSRF validation and sets
+       its own "csrftoken" cookie. Django uses a different cookie name
+       (__Host-csrftoken), so CsrfViewMiddleware would not find the
+       gateway's token. We detect gateway-proxied requests by the
+       presence of the gateway session cookie (GATEWAY_SESSION_COOKIE_NAME)
+       AND the absence of Django's own session cookie (SESSION_COOKIE_NAME),
+       then copy the gateway's CSRF cookie value (GATEWAY_CSRF_COOKIE_NAME)
+       into request.COOKIES[CSRF_COOKIE_NAME]. This allows Django's CSRF
+       validation to pass using the token the gateway already verified.
+
+    Must be placed BEFORE CsrfViewMiddleware in the middleware stack.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def _is_gateway_request(self, request):
+        """Detect gateway-proxied requests: gateway session cookie is
+        present but Django's own session cookie is not."""
+        return (
+            settings.GATEWAY_SESSION_COOKIE_NAME in request.COOKIES
+            and settings.SESSION_COOKIE_NAME not in request.COOKIES
+        )
+
+    def _ensure_csrf_cookie(self, request):
+        """Ensure the CSRF secret is available in request.META and
+        request.COOKIES so that both CsrfViewMiddleware (reads META)
+        and DRF's SessionAuthentication.enforce_csrf (reads COOKIES)
+        can validate the token.
+
+        Four cases (all handle the cross-origin proxy / OAuth/gateway
+        scenario where the cookie domain doesn't match the API domain):
+
+        1. Browser sent the CSRF cookie — transfer its value into
+           META before calling get_token() so get_token() reuses the
+           existing secret instead of generating a new one.
+
+        2. No cookie but X-CSRFToken header is present — the JS read
+           the token from a cookie the browser didn't send back (e.g.
+           OAuth authentication via the gateway where the gateway's
+           cookie domain doesn't match the Django API domain).
+           Use the header value as the secret; X-CSRFToken can only
+           be set by same-origin JS so this is safe from CSRF attacks.
+
+        3. No cookie, no header, but a csrfmiddlewaretoken in POST
+           form data (e.g. logout form) — inject the form token into
+           COOKIES and let CsrfViewMiddleware unmask it into META.
+           Skip get_token() to avoid overwriting with a new secret.
+
+        4. None of the above — generate a fresh secret and inject it
+           into COOKIES for DRF."""
+        existing = request.COOKIES.get(settings.CSRF_COOKIE_NAME)
+        header_token = request.META.get("HTTP_X_CSRFTOKEN")
+
+        if existing:
+            request.META["CSRF_COOKIE"] = existing
+        elif header_token:
+            request.META["CSRF_COOKIE"] = header_token
+            request.COOKIES[settings.CSRF_COOKIE_NAME] = header_token
+        elif request.method == "POST":
+            form_token = request.POST.get("csrfmiddlewaretoken")
+            if form_token:
+                request.COOKIES[settings.CSRF_COOKIE_NAME] = form_token
+                return
+
+        token = get_token(request)
+        if not existing and not header_token:
+            request.COOKIES.setdefault(settings.CSRF_COOKIE_NAME, token)
+
+    def __call__(self, request):
+        if self._is_gateway_request(request):
+            gw_token = request.COOKIES.get(settings.GATEWAY_CSRF_COOKIE_NAME)
+            if gw_token:
+                request.COOKIES[settings.CSRF_COOKIE_NAME] = gw_token
+            else:
+                self._ensure_csrf_cookie(request)
+        else:
+            self._ensure_csrf_cookie(request)
+
+        return self.get_response(request)
 
 
 def check_csrf(request):

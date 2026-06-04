@@ -21,6 +21,7 @@ from django.contrib.auth.signals import (
     user_login_failed,
 )
 from django.dispatch import Signal, receiver
+from django.middleware.csrf import rotate_token
 from oauth2_provider.models import get_access_token_model, get_refresh_token_model
 
 logger = logging.getLogger(__name__)
@@ -33,9 +34,11 @@ user_set_telemetry_settings = Signal()
 
 
 @receiver(user_logged_in)
-def user_login_log(sender, user, **kwargs):
+def user_login_log(sender, user, request=None, **kwargs):
     """Successful user login log to user log"""
     logger.info(f"User: {user} LOGIN successful")
+    if request:
+        rotate_token(request)
 
 
 @receiver(user_login_failed)
