@@ -312,7 +312,7 @@ propcache==0.4.1
     #   yarl
 proto-plus==1.26.1
     # via google-api-core
-protobuf==5.29.6
+protobuf==7.35.0
     # via
     #   ansible-ai-connect
     #   google-api-core
