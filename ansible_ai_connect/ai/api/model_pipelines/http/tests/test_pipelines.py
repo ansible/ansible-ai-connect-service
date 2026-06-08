@@ -151,7 +151,6 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
             provider="",
             model_id="",
             conversation_id=None,
-            system_prompt="You are a helpful assistant",
             media_type="application/json",
             no_tools=False,  # Do not bypass tool callings
             event=event,
@@ -192,6 +191,7 @@ class TestHttpStreamingChatBotPipeline(IsolatedAsyncioTestCase, WisdomLogAwareMi
                 self.assertIn("docs_url", doc)
 
     @patch("aiohttp.ClientSession.post")
+    @override_settings(CHATBOT_DEFAULT_SYSTEM_PROMPT="You are a helpful assistant")
     async def test_async_invoke_with_no_error(self, mock_post):
         mock_post.return_value = self.get_return_value(self.STREAM_DATA)
         with patch(
@@ -656,7 +656,6 @@ class TestHttpStreamingChatBotPipelineNormalizeReferencedDocuments(
             provider="test-provider",
             model_id="test-model",
             conversation_id=None,
-            system_prompt="Test prompt",
             media_type="application/json",
             no_tools=False,
             event=event,
@@ -733,7 +732,6 @@ class TestHttpStreamingChatBotPipelineGenerateTopicSummary(
             conversation_id="test-conversation-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
             media_type="application/json",
             no_tools=False,
             event=event,

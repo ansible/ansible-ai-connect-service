@@ -1096,6 +1096,15 @@ class GenerationRole(AACSAPIView):
         )
 
 
+def _init_chat_event(view, req_provider, conversation_id, no_tools):
+    """Initialise common Segment telemetry fields for chat events."""
+    view.event.chat_system_prompt = settings.CHATBOT_DEFAULT_SYSTEM_PROMPT or ""
+    view.event.provider_id = req_provider
+    view.event.conversation_id = conversation_id
+    view.event.modelName = view.req_model_id or view.llm.config.model_id
+    view.event.no_tools = no_tools
+
+
 class Chat(AACSAPIView):
     """
     Send a message to the backend chatbot service and get a reply.
@@ -1150,7 +1159,6 @@ class Chat(AACSAPIView):
             raise ChatbotNotEnabledException()
 
         req_query = self.validated_data["query"]
-        req_system_prompt = self.validated_data.get("system_prompt")
         req_provider = self.validated_data.get("provider", settings.CHATBOT_DEFAULT_PROVIDER)
         conversation_id = self.validated_data.get("conversation_id")
         no_tools = self.validated_data.get("no_tools", False)
@@ -1161,12 +1169,7 @@ class Chat(AACSAPIView):
         ):
             raise ChatbotForbiddenException()
 
-        # Initialise Segment Event early, in case of exceptions
-        self.event.chat_system_prompt = req_system_prompt
-        self.event.provider_id = req_provider
-        self.event.conversation_id = conversation_id
-        self.event.modelName = self.req_model_id or self.llm.config.model_id
-        self.event.no_tools = no_tools
+        _init_chat_event(self, req_provider, conversation_id, no_tools)
 
         auth_header = self.get_auth_header()
         mcp_headers = self.get_mcp_headers(request, self.llm.config)
@@ -1174,7 +1177,6 @@ class Chat(AACSAPIView):
         data = self.llm.invoke(
             ChatBotParameters.init(
                 query=req_query,
-                system_prompt=req_system_prompt,
                 model_id=self.req_model_id or self.llm.config.model_id,
                 provider=req_provider,
                 conversation_id=conversation_id,
@@ -1260,7 +1262,6 @@ class StreamingChat(AACSAPIView):
             raise ChatbotNotEnabledException()
 
         req_query = self.validated_data["query"]
-        req_system_prompt = self.validated_data.get("system_prompt")
         req_provider = self.validated_data.get("provider", settings.CHATBOT_DEFAULT_PROVIDER)
         conversation_id = self.validated_data.get("conversation_id")
         media_type = self.validated_data.get("media_type")
@@ -1272,12 +1273,7 @@ class StreamingChat(AACSAPIView):
         ):
             raise ChatbotForbiddenException()
 
-        # Initialise Segment Event early, in case of exceptions
-        self.event.chat_system_prompt = req_system_prompt
-        self.event.provider_id = req_provider
-        self.event.conversation_id = conversation_id
-        self.event.modelName = self.req_model_id or self.llm.config.model_id
-        self.event.no_tools = no_tools
+        _init_chat_event(self, req_provider, conversation_id, no_tools)
 
         auth_header = self.get_auth_header()
         mcp_headers = self.get_mcp_headers(request, self.llm.config)
@@ -1285,7 +1281,6 @@ class StreamingChat(AACSAPIView):
         return self.llm.invoke(
             StreamingChatBotParameters.init(
                 query=req_query,
-                system_prompt=req_system_prompt,
                 model_id=self.req_model_id or self.llm.config.model_id,
                 provider=req_provider,
                 conversation_id=conversation_id,

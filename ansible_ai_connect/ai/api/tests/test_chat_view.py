@@ -187,7 +187,6 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             }
         elif (
             kwargs["json"]["query"] == TestChatView.PAYLOAD_WITH_MODEL_AND_PROVIDER["query"]
-            or kwargs["json"]["query"] == TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"]
             or kwargs["json"]["query"] == TestChatView.PAYLOAD_WITH_NO_TOOLS_OPTION["query"]
         ):
             status_code = 200
@@ -344,9 +343,20 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         self.assertIn('"model": "non_default_model"', r.data["response"])
         self.assertIn('"provider": "non_default_provider"', r.data["response"])
 
-    def test_chat_with_system_prompt_override(self):
-        r = self.assert_test(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
-        self.assertIn(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["query"], r.data["response"])
+    def test_chat_rejects_system_prompt_override(self):
+        """system_prompt must be rejected by the serializer to prevent prompt injection."""
+        payload = TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
+            ),
+            self.assertLogs(logger="root", level="DEBUG"),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.query_with_no_error(payload)
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry(self):
@@ -456,7 +466,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    def test_operational_telemetry_with_system_prompt_override(self):
+    def test_operational_telemetry_without_system_prompt(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
@@ -472,23 +482,18 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
-            r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
+            r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
-            # Verify that chat_response is not found
             self.assertNotIn("chat_response", segment_events[0]["properties"])
             self.assertEqual(
                 segment_events[0]["properties"]["chat_truncated"],
                 TestChatView.JSON_RESPONSE["truncated"],
             )
             self.assertEqual(len(segment_events[0]["properties"]["chat_referenced_documents"]), 0)
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_system_prompt"],
-                TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["system_prompt"],
-            )
+            self.assertEqual(segment_events[0]["properties"]["chat_system_prompt"], "")
             self.assertFalse(segment_events[0]["properties"]["no_tools"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
@@ -787,8 +792,23 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
 
+    def test_streaming_chat_rejects_system_prompt_override(self):
+        """system_prompt must be rejected by the serializer to prevent prompt injection."""
+        payload = TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE
+        with (
+            patch.object(
+                apps.get_app_config("ai"),
+                "get_model_pipeline",
+                Mock(return_value=HttpStreamingChatBotPipeline(mock_pipeline_config("http"))),
+            ),
+            self.assertLogs(logger="root", level="DEBUG"),
+        ):
+            self.client.force_authenticate(user=self.user)
+            r = self.query_with_no_error(payload)
+            self.assertEqual(r.status_code, HTTPStatus.BAD_REQUEST)
+
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    def test_operational_telemetry_with_system_prompt_override(self):
+    def test_operational_telemetry_without_system_prompt(self):
         self.user.rh_user_has_seat = True
         self.user.organization = Organization.objects.get_or_create(id=1)[0]
         self.client.force_authenticate(user=self.user)
@@ -804,10 +824,9 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
             ),
             self.assertLogs(logger="root", level="DEBUG") as log,
         ):
-            r = self.query_with_no_error(TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE)
+            r = self.query_with_no_error(TestChatView.VALID_PAYLOAD_WITH_CONVERSATION_ID)
             self.assertEqual(r.status_code, HTTPStatus.OK)
             segment_events = self.extractSegmentEventsFromLog(log)
-            # Verify that chat_prompt is not found
             self.assertNotIn("chat_prompt", segment_events[0]["properties"])
             self.assertEqual(segment_events[0]["properties"]["modelName"], "granite-8b")
             self.assertEqual(
@@ -815,10 +834,7 @@ class TestStreamingChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase
                 TestChatView.JSON_RESPONSE["truncated"],
             )
             self.assertEqual(len(segment_events[0]["properties"]["chat_referenced_documents"]), 0)
-            self.assertEqual(
-                segment_events[0]["properties"]["chat_system_prompt"],
-                TestChatView.PAYLOAD_WITH_SYSTEM_PROMPT_OVERRIDE["system_prompt"],
-            )
+            self.assertEqual(segment_events[0]["properties"]["chat_system_prompt"], "")
             self.assertFalse(segment_events[0]["properties"]["no_tools"])
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")

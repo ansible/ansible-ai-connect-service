@@ -345,7 +345,6 @@ Metadata: {'docs_url': 'https://docs.example.com/2', 'title': 'ref-2', 'document
             provider="",
             model_id="",
             conversation_id=None,
-            system_prompt="",
             media_type="application/json",
             no_tools=False,
             event=event,

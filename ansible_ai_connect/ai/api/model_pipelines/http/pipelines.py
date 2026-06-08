@@ -223,7 +223,6 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         conversation_id = params.conversation_id
         provider = params.provider
         model_id = params.model_id
-        system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
         no_tools = params.no_tools
 
         data: dict[str, Any] = {
@@ -234,8 +233,8 @@ class HttpChatBotPipeline(HttpChatBotMetaData, ModelPipelineChatBot[HttpConfigur
         }
         if conversation_id:
             data["conversation_id"] = str(conversation_id)
-        if system_prompt:
-            data["system_prompt"] = str(system_prompt)
+        if settings.CHATBOT_DEFAULT_SYSTEM_PROMPT:
+            data["system_prompt"] = str(settings.CHATBOT_DEFAULT_SYSTEM_PROMPT)
         if no_tools:
             data["no_tools"] = bool(no_tools)
 
@@ -371,7 +370,6 @@ class HttpStreamingChatBotPipeline(
             conversation_id = params.conversation_id
             provider = params.provider
             model_id = params.model_id
-            system_prompt = params.system_prompt or settings.CHATBOT_DEFAULT_SYSTEM_PROMPT
             media_type = params.media_type
             no_tools = params.no_tools
 
@@ -383,8 +381,8 @@ class HttpStreamingChatBotPipeline(
             }
             if conversation_id:
                 data["conversation_id"] = str(conversation_id)
-            if system_prompt:
-                data["system_prompt"] = str(system_prompt)
+            if settings.CHATBOT_DEFAULT_SYSTEM_PROMPT:
+                data["system_prompt"] = str(settings.CHATBOT_DEFAULT_SYSTEM_PROMPT)
             if media_type:
                 data["media_type"] = str(media_type)
             if no_tools:
@@ -405,7 +403,7 @@ class HttpStreamingChatBotPipeline(
 
                     # Initialise Segment Event
                     ev: StreamingChatBotOperationalEvent = copy.copy(params.event)
-                    ev.chat_system_prompt = params.system_prompt
+                    ev.chat_system_prompt = settings.CHATBOT_DEFAULT_SYSTEM_PROMPT or ""
                     ev.provider_id = params.provider
                     ev.conversation_id = params.conversation_id
                     ev.modelName = params.model_id
