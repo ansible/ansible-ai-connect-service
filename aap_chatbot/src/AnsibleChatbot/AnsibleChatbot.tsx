@@ -15,6 +15,7 @@ import ChatbotHeader, {
 
 import "./AnsibleChatbot.scss";
 import { bodyElement, inDebugMode, useChatbot } from "../useChatbot/useChatbot";
+import { DebugSettingsModal } from "../DebugSettingsModal/DebugSettingsModal";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
@@ -34,7 +35,6 @@ import {
   FOOTNOTE_LABEL,
   REFERENCED_DOCUMENTS_CAPTION,
 } from "../Constants";
-import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 
 const footnoteProps: ChatbotFootnoteProps = {
   label: FOOTNOTE_LABEL,
@@ -104,8 +104,6 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     setAlertMessage,
     conversationId,
     setConversationId,
-    systemPrompt,
-    setSystemPrompt,
     hasStopButton,
     handleStopButton,
     isStreamingSupported,
@@ -234,9 +232,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
                   />
                   <ChatbotHeaderActions>
                     {inDebugMode() && (
-                      <SystemPromptModal
-                        systemPrompt={systemPrompt}
-                        setSystemPrompt={setSystemPrompt}
+                      <DebugSettingsModal
                         bypassTools={bypassTools}
                         setBypassTools={setBypassTools}
                       />
