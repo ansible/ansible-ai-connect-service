@@ -55,8 +55,8 @@ import {
   FOOTNOTE_LABEL,
   REFERENCED_DOCUMENTS_CAPTION,
 } from "../Constants";
-import { SystemPromptModal } from "../SystemPromptModal/SystemPromptModal";
 import { InventoryDocumentationModal } from "../InventoryDocumentationModal/InventoryDocumentationModal";
+import { DebugSettingsModal } from "../DebugSettingsModal/DebugSettingsModal";
 
 const footnoteProps: ChatbotFootnoteProps = {
   label: FOOTNOTE_LABEL,
@@ -122,8 +122,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
     setSelectedModel,
     conversationId,
     setConversationId,
-    systemPrompt,
-    setSystemPrompt,
     hasStopButton,
     handleStopButton,
     isStreamingSupported,
@@ -279,16 +277,6 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                     onMenuToggle={() => setIsDrawerOpen(!isDrawerOpen)}
                     tooltipProps={{ appendTo: bodyElement, content: "Menu" }}
                   />
-                  <ChatbotHeaderActions>
-                    {inDebugMode() && (
-                      <SystemPromptModal
-                        systemPrompt={systemPrompt}
-                        setSystemPrompt={setSystemPrompt}
-                        bypassTools={bypassTools}
-                        setBypassTools={setBypassTools}
-                      />
-                    )}
-                  </ChatbotHeaderActions>
                   <ChatbotHeaderNewChatButton
                     data-testid="header-new-chat-button"
                     onClick={() => setCurrentConversation(undefined, [])}
@@ -316,6 +304,12 @@ export const AnsibleChatbot: React.FunctionComponent = () => {
                     </Label>
                   </Tooltip>
                   <InventoryDocumentationModal />
+                  {inDebugMode() && (
+                    <DebugSettingsModal
+                      bypassTools={bypassTools}
+                      setBypassTools={setBypassTools}
+                    />
+                  )}
                   {inDebugMode() && (
                     <ChatbotHeaderSelectorDropdown
                       value={selectedModel}

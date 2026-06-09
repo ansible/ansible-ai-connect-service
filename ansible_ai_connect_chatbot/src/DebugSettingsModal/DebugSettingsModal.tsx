@@ -9,29 +9,22 @@ import {
   ModalFooter,
   ModalHeader,
   ModalVariant,
-  TextArea,
 } from "@patternfly/react-core";
 import WrenchIcon from "@patternfly/react-icons/dist/esm/icons/wrench-icon";
 
-interface SystemPromptModalProps {
-  systemPrompt: string;
-  setSystemPrompt: (s: string) => void;
+interface DebugSettingsModalProps {
   bypassTools: boolean;
   setBypassTools: (b: boolean) => void;
 }
 
-export const SystemPromptModal: React.FunctionComponent<
-  SystemPromptModalProps
+export const DebugSettingsModal: React.FunctionComponent<
+  DebugSettingsModalProps
 > = (props) => {
   const [isModalOpen, setModalOpen] = React.useState(false);
-  const { systemPrompt, setSystemPrompt, bypassTools, setBypassTools } = props;
+  const { bypassTools, setBypassTools } = props;
 
   const handleModalToggle = (_event: KeyboardEvent | React.MouseEvent) => {
     setModalOpen(!isModalOpen);
-  };
-
-  const handleSystemPromptInputChange = (_event: any, value: string) => {
-    setSystemPrompt(value);
   };
 
   const handleBypassToolsChange = (_event: any, value: boolean) => {
@@ -42,7 +35,7 @@ export const SystemPromptModal: React.FunctionComponent<
     <React.Fragment>
       <Button
         variant="link"
-        aria-label="SystemPrompt"
+        aria-label="DebugSettings"
         icon={<WrenchIcon />}
         onClick={handleModalToggle}
       ></Button>
@@ -50,27 +43,18 @@ export const SystemPromptModal: React.FunctionComponent<
         variant={ModalVariant.small}
         isOpen={isModalOpen}
         onClose={handleModalToggle}
-        aria-labelledby="system-prompt-form-title"
-        aria-describedby="system-prompt-description-form"
+        aria-labelledby="debug-settings-form-title"
+        aria-describedby="debug-settings-description-form"
       >
         <ModalHeader
-          title="System prompt"
-          description="Enter a system prompt to override the default one."
-          descriptorId="system-prompt-description-form"
-          labelId="system-prompt-form-title"
+          title="Debug Settings"
+          description="Configure debug options for the chatbot."
+          descriptorId="debug-settings-description-form"
+          labelId="debug-settings-form-title"
         />
         <ModalBody>
-          <Form id="system-prompt-form">
-            <FormGroup label="System Prompt" isRequired fieldId="system-prompt">
-              <TextArea
-                isRequired
-                id="system-prompt"
-                name="system-prompt"
-                value={systemPrompt}
-                onChange={handleSystemPromptInputChange}
-                aria-label="system-prompt-form-text-area"
-                rows={15}
-              />
+          <Form id="debug-settings-form">
+            <FormGroup fieldId="bypass-tools">
               <Checkbox
                 id="bypass-tools"
                 label="Bypass Tools"
@@ -83,11 +67,11 @@ export const SystemPromptModal: React.FunctionComponent<
         </ModalBody>
         <ModalFooter>
           <Button
-            key="create"
+            key="close"
             variant="primary"
-            form="system-prompt-form"
+            form="debug-settings-form"
             onClick={handleModalToggle}
-            aria-label="system-prompt-form-button"
+            aria-label="debug-settings-form-button"
           >
             Close
           </Button>
@@ -96,4 +80,4 @@ export const SystemPromptModal: React.FunctionComponent<
     </React.Fragment>
   );
 };
-SystemPromptModal.displayName = "SystemPromptModal";
+DebugSettingsModal.displayName = "DebugSettingsModal";

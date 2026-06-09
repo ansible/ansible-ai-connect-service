@@ -18,7 +18,6 @@ import {
   API_TIMEOUT,
   GITHUB_NEW_ISSUE_BASE_URL,
   getInitialNotice,
-  getSystemInstruction,
   REFERENCED_DOCUMENTS_CAPTION,
   Sentiment,
   TIMEOUT_MSG,
@@ -187,7 +186,6 @@ export const useChatbot = () => {
   };
 
   const [selectedModel, setSelectedModel] = useState("granite-3.3-8b-instruct");
-  const [systemPrompt, setSystemPrompt] = useState(getSystemInstruction());
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
   const [bypassTools, setBypassTools] = useState<boolean>(false);
@@ -513,9 +511,6 @@ export const useChatbot = () => {
       query: query.toString(),
     };
 
-    if (systemPrompt !== getSystemInstruction()) {
-      chatRequest.system_prompt = systemPrompt;
-    }
     if (bypassTools) {
       chatRequest.no_tools = true;
     }
@@ -736,8 +731,6 @@ export const useChatbot = () => {
     setSelectedModel,
     conversationId,
     setConversationId,
-    systemPrompt,
-    setSystemPrompt,
     hasStopButton,
     handleStopButton,
     isStreamingSupported,
