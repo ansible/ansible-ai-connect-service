@@ -65,7 +65,6 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
             conversation_id="test-conversation-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
             no_tools=False,
             mcp_headers=mcp_headers,
         )
@@ -287,7 +286,6 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
             conversation_id="test-conversation-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
             no_tools=False,
             mcp_headers=mcp_headers,
         )
@@ -334,7 +332,6 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
             conversation_id="secure-conversation-456",
             provider="secure-provider",
             model_id="secure-model",
-            system_prompt="You are a secure assistant",
             no_tools=False,
             mcp_headers=mcp_headers,
         )
@@ -369,8 +366,7 @@ class TestHttpChatBotPipelineMCPHeaders(WisdomServiceLogAwareTestCase):
             conversation_id="test-conversation-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
-            no_tools=True,  # Set to True
+            no_tools=True,
             mcp_headers=None,
         )
 
@@ -416,7 +412,6 @@ class TestHttpChatBotPipelineAuthorizationHeader(WisdomServiceLogAwareTestCase):
             conversation_id="test-conversation-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
             no_tools=False,
             mcp_headers=None,
             auth_header=auth_header,
@@ -579,7 +574,6 @@ class TestHttpChatBotPipelineNormalizeReferencedDocuments(WisdomServiceLogAwareT
             conversation_id="test-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
             no_tools=False,
         )
 
@@ -608,7 +602,6 @@ class TestHttpChatBotPipelineNormalizeReferencedDocuments(WisdomServiceLogAwareT
             conversation_id="test-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
             no_tools=False,
         )
 
@@ -643,7 +636,6 @@ class TestHttpChatBotPipelineGenerateTopicSummary(WisdomServiceLogAwareTestCase)
             conversation_id="test-conversation-123",
             provider="test-provider",
             model_id="test-model",
-            system_prompt="You are a helpful assistant",
             no_tools=False,
         )
 

@@ -229,7 +229,6 @@ class ChatBotParameters:
     provider: str
     model_id: str
     conversation_id: Optional[str]
-    system_prompt: str
     auth_header: Optional[str] = field(kw_only=True, default=None)
     mcp_headers: Optional[dict[str, dict[str, str]]] = field(kw_only=True, default=None)
     no_tools: bool
@@ -241,7 +240,6 @@ class ChatBotParameters:
         provider: Optional[str] = None,
         model_id: Optional[str] = None,
         conversation_id: Optional[str] = None,
-        system_prompt: Optional[str] = None,
         auth_header: Optional[str] = None,
         mcp_headers: Optional[dict[str, dict[str, str]]] = None,
         no_tools: Optional[bool] = False,
@@ -251,7 +249,6 @@ class ChatBotParameters:
             provider=provider,
             model_id=model_id,
             conversation_id=conversation_id,
-            system_prompt=system_prompt,
             auth_header=auth_header,
             mcp_headers=mcp_headers,
             no_tools=no_tools,
@@ -273,7 +270,6 @@ class StreamingChatBotParameters(ChatBotParameters):
         provider: Optional[str] = None,
         model_id: Optional[str] = None,
         conversation_id: Optional[str] = None,
-        system_prompt: Optional[str] = None,
         media_type: Optional[str] = None,
         event: Optional[Any] = None,
         auth_header: Optional[str] = None,
@@ -285,7 +281,6 @@ class StreamingChatBotParameters(ChatBotParameters):
             provider=provider,
             model_id=model_id,
             conversation_id=conversation_id,
-            system_prompt=system_prompt,
             media_type=media_type,
             event=event,
             auth_header=auth_header,

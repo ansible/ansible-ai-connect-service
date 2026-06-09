@@ -339,16 +339,17 @@ class ChatRequestSerializer(serializers.Serializer):
         label="Provider name",
         help_text=("A name that identifies a LLM provider."),
     )
-    system_prompt = serializers.CharField(
-        required=False,
-        label="System prompt",
-        help_text=("An optional non-default system prompt to be used on LLM (debug mode only)."),
-    )
     no_tools = serializers.BooleanField(
         required=False,
         label="Bypass tools",
         help_text=("Whether to bypass all tools and MCP servers"),
     )
+
+    def to_internal_value(self, data):
+        unknown_fields = set(data.keys()) - set(self.fields.keys())
+        if unknown_fields:
+            raise serializers.ValidationError({field: "Unknown field." for field in unknown_fields})
+        return super().to_internal_value(data)
 
 
 class StreamingChatRequestSerializer(ChatRequestSerializer):
