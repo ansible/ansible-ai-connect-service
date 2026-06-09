@@ -399,7 +399,7 @@ test("Basic chatbot interaction", async () => {
   assert(copiedString.includes("Create variables"));
   assert(copiedString.includes("https://"));
 
-  await page.getByLabelText("Chat history menu").click();
+  await page.getByLabelText("Chat history drawer").click();
   const newChatButton = page
     .getByText("New chat")
     .element() as HTMLButtonElement;
@@ -451,7 +451,7 @@ test("Basic chatbot interaction", async () => {
     .toBeVisible();
   await expect.element(view.getByText("Create variables")).toBeVisible();
 
-  await page.getByLabelText("Chat history menu").click();
+  await page.getByLabelText("Chat history drawer").click();
 
   const filterHistory = page.getByLabelText("Search previous conversations");
   await expect.element(filterHistory).toBeVisible();
