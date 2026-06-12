@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ansible/ansible-ui-framework": "^2.4.2606",
-    "@babel/core": "^7.16.0",
+    "@babel/core": "^7.29.7",
     "@babel/plugin-proposal-private-property-in-object": "^7.16.0",
     "@patternfly/patternfly": "^5.1",
     "@patternfly/react-core": "^5.1",
