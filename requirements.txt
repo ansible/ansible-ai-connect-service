@@ -259,7 +259,7 @@ monotonic==1.6
     # via segment-analytics-python
 msgpack==1.1.2 ; platform_python_implementation == 'CPython'
     # via autobahn
-multidict==6.7.0
+multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
