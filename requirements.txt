@@ -358,7 +358,7 @@ pyjwt==2.13.0
     # via
     #   django-ansible-base
     #   social-auth-core
-pyopenssl==26.0.0
+pyopenssl==26.3.0
     # via
     #   pydrive2
     #   twisted
