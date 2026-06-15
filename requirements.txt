@@ -243,7 +243,7 @@ jwcrypto==1.5.7
     # via
     #   ansible-ai-connect
     #   django-oauth-toolkit
-launchdarkly-server-sdk==8.3.0
+launchdarkly-server-sdk==9.16.0
     # via ansible-ai-connect
 llama-stack-client==0.2.22
     # via ansible-ai-connect
