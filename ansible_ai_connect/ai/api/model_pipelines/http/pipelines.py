@@ -154,7 +154,7 @@ class HttpChatBotMetaData(HttpMetaData):
             r = self.session.get(
                 self.config.inference_url + "/readiness",
                 headers=headers,
-                timeout=1,
+                timeout=5,
             )
             r.raise_for_status()
 
