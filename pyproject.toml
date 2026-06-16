@@ -48,7 +48,7 @@ dependencies = [
   'django-allow-cidr',
   'django-csp~=3.7',
   'django-ansible-base[api-documentation,jwt-consumer,resource-registry]>=2026.1.26',
-  'filelock==3.20.3',
+  'filelock==3.29.4',
   'pyasn1==0.6.3',
 ]
 readme = "README.rst"
