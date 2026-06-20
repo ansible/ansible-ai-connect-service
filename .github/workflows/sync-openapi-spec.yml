@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Determine target branch in spec repo
         id: branch_mapping
@@ -108,7 +108,7 @@ jobs:
           echo "✅ Found spec file at $SPEC_FILE"
 
       - name: Checkout spec repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ansible-automation-platform/aap-openapi-specs
           ref: ${{ steps.branch_mapping.outputs.target_branch }}
