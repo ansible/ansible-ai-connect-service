@@ -217,7 +217,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = "~=3.14.1" },
     { name = "ansible-anonymizer", specifier = "~=1.5.0" },
-    { name = "ansible-core", specifier = "~=2.16.14" },
+    { name = "ansible-core", specifier = "~=2.21.1" },
     { name = "ansible-lint", specifier = "~=25.5.0" },
     { name = "black", marker = "extra == 'dev'", specifier = "~=26.3.1" },
     { name = "boto3", specifier = "~=1.40" },
@@ -298,7 +298,7 @@ wheels = [
 
 [[package]]
 name = "ansible-core"
-version = "2.16.14"
+version = "2.21.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
@@ -307,9 +307,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "resolvelib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/de/5c/ac61c1444b36b07bfde70dea95beb5a89525b11c92f6e7ef8b87e3ba0248/ansible_core-2.16.14.tar.gz", hash = "sha256:80279fffd98686badfaa32e1ec785d98a6df1b2fc1e4097dec0597640d746415", size = 3159494, upload-time = "2024-12-02T17:47:55.303Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/6d/38d7eaea1df4a95c3b137e780f6ad2208d7886334a291cadde5d645f08a1/ansible_core-2.21.1.tar.gz", hash = "sha256:a5536ece95be84de15212b3644cdbbe9cbd9efd62e4e8a544cd6b0b27a083039", size = 3384534, upload-time = "2026-06-18T19:35:02.887Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ce/c3/ad44b1a08f3dbf591dc1ab58619446a6d473fabf3361e553e3e75ed97cc8/ansible_core-2.16.14-py3-none-any.whl", hash = "sha256:b7b6df2fb0cf065b091d0332e98afbe4b028f2ffe58078e7dcf83f09e35cc8ad", size = 2254208, upload-time = "2024-12-02T17:47:52.962Z" },
+    { url = "https://files.pythonhosted.org/packages/90/55/894f2cad10ef650bf33a0e64e242805de2d1a8835f539d04d52053fe08a6/ansible_core-2.21.1-py3-none-any.whl", hash = "sha256:1403ff56bb69484ef90788126d06c65b4e28e8d2dcdcfb7f027d4c1495052d7e", size = 2454057, upload-time = "2026-06-18T19:35:00.741Z" },
 ]
 
 [[package]]
