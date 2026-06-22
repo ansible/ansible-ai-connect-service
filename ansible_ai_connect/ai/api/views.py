@@ -183,6 +183,7 @@ PERMISSIONS_MAP = {
 # CVE-2026-0598: conversation ownership tracking (24-hour TTL matches typical session lifetime)
 _CONVERSATION_OWNER_CACHE_TIMEOUT = 24 * 60 * 60
 
+_AUTH_ACCESS = {}
 
 def _claim_or_verify_conversation_ownership(conversation_id: str, user_uuid) -> bool:
     """
@@ -292,16 +293,73 @@ class AACSAPIView(APIView):
     def get_mcp_headers(request: Request, config: HttpConfiguration) -> dict:
         mcp_headers = {}
         jwt_header_name = "X-DAB-JW-TOKEN"
+        auth_header_name = "X-Authorization"
         token = request.headers.get(jwt_header_name, None)
         user = request.user
-        if token and user.is_authenticated and user.aap_user:
+        if token and user.is_authenticated and user.aap_user and config.mcp_servers:
+            import requests
+            client_id = settings.SOCIAL_AUTH_AAP_KEY
+            client_secret = settings.SOCIAL_AUTH_AAP_SECRET
+            csrf_token = request.headers.get("X-CSRFToken", None)
+            cookie = request.headers.get("Cookie", None)
+            session = requests.Session()
+            session.verify = False
+            access_token = _AUTH_ACCESS.get(user.id, {}).get("access_token", None)
+            # need to check expires_in
+            if not access_token:
+                response = session.post("https://localhost/o/authorize/",
+                    data={
+                        "response_type": "code",
+                        "client_id": client_id,
+                        # important we need to get this url from environment setup
+                        # otherwise this will fail
+                        "redirect_uri": "http://aap.foo.redhat.com:7080/complete/aap/",
+                        "scope": "write",
+                        "allow": "Authorize",  # This is the approval button
+                    },
+                    headers={
+                        "X-CSRFToken": csrf_token,
+                        "Cookie": cookie,
+                        "Referer": "https://localhost/",
+                    },
+                    allow_redirects=False,
+                    verify=False,
+                )
+
+                from urllib.parse import urlparse, parse_qs
+
+                redirect_url = response.headers["Location"]
+                code = parse_qs(urlparse(redirect_url).query)["code"][0]
+                response = session.post(
+                    "https://localhost/o/token/",
+                    data={
+                        "grant_type": "authorization_code",
+                        "code": code,
+                        # important we need to get this url from environment setup
+                        # otherwise this will fail
+                        "redirect_uri": "http://aap.foo.redhat.com:7080/complete/aap/",
+                        "client_id": client_id,
+                        "client_secret": client_secret,
+                    },
+                    verify=False,
+                )
+                # need to cache this auth using this contains alose the "expires_in"
+                _AUTH_ACCESS[user.id] = response.json()
+                access_token = _AUTH_ACCESS[user.id]["access_token"]
+
             for mcp_server in config.mcp_servers:
-                if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
+                # if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed", "mcp-server"]:
+                #     logger.debug(
+                #         f"Setting MCP header - server_type: {mcp_server['type']}, "
+                #         f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
+                #     )
+                #     mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
+                if mcp_server["type"] in ["mcp-server"]:
                     logger.debug(
                         f"Setting MCP header - server_type: {mcp_server['type']}, "
-                        f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
+                        f"server_name: {mcp_server['name']}, header_name: {auth_header_name}"
                     )
-                    mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
+                    mcp_headers[mcp_server["name"]] = {auth_header_name: f"Bearer {access_token}"}
                 # This functionality seems experimental for gateway and does not allow the user to
                 # access wide range of api endpoints, we need to find a solution for gateway,
                 # but for the moment comment this code.
