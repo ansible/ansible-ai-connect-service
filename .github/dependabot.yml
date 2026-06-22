@@ -8,7 +8,7 @@ updates:
     open-pull-requests-limit: 3
     labels:
       - "dependencies"
-      - "python"
+      - "python:uv"
       - "security"
     commit-message:
       prefix: "deps"
@@ -27,7 +27,6 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
-      - "admin-portal"
       - "security"
     commit-message:
       prefix: "deps"
