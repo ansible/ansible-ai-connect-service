@@ -13,11 +13,13 @@ import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { App } from "./App";
-import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
+import {
+  ColorThemeSwitch,
+  conversationStore,
+} from "@ansible/ansible-ai-connect-chatbot";
 import { userEvent, page } from "@vitest/browser/context";
 // See: https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
-import { conversationStore } from "./AnsibleChatbot/AnsibleChatbot";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 

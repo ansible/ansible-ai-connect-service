@@ -19,6 +19,7 @@ import { DebugSettingsModal } from "../DebugSettingsModal/DebugSettingsModal";
 import { ReferencedDocuments } from "../ReferencedDocuments/ReferencedDocuments";
 
 import type { ExtendedMessage } from "../types/Message";
+import type { ChatbotConfig } from "../types/ChatbotConfig";
 import {
   Chatbot,
   ChatbotAlert,
@@ -87,12 +88,12 @@ const findMatchingItems = (targetValue: string) => {
   return filteredConversations;
 };
 
-export interface ChatbotContext {
+export interface ChatbotProps extends ChatbotConfig {
   username?: string | undefined;
 }
 
-export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
-  context,
+export const AnsibleChatbot: React.FunctionComponent<ChatbotProps> = (
+  props,
 ) => {
   const {
     messages,
@@ -102,6 +103,8 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     handleSend,
     alertMessage,
     setAlertMessage,
+    selectedModel,
+    setSelectedModel,
     conversationId,
     setConversationId,
     hasStopButton,
@@ -109,7 +112,21 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     isStreamingSupported,
     bypassTools,
     setBypassTools,
-  } = useChatbot();
+    models,
+  } = useChatbot({
+    apiBasePath: props.apiBasePath,
+    models: props.models,
+    includeQueryInFeedbackUrl: props.includeQueryInFeedbackUrl,
+  });
+
+  const welcomeTitle =
+    props.welcomeTitle ?? "Hello " + (props.username ?? "");
+  const welcomePrompts = (props.welcomePrompts ?? []).map((prompt) => ({
+    title: prompt.title,
+    message: prompt.message,
+    onClick: () => handleSend(prompt.message),
+  }));
+
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode] = useState<ChatbotDisplayMode>(
     ChatbotDisplayMode.fullscreen,
@@ -178,6 +195,47 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     }
   };
 
+  const defaultHeader = (
+    <ChatbotHeader>
+      <ChatbotHeaderMain>
+        <ChatbotHeaderMenu
+          ref={historyRef}
+          aria-expanded={isDrawerOpen}
+          onMenuToggle={() => setIsDrawerOpen(!isDrawerOpen)}
+          tooltipProps={{ appendTo: bodyElement, content: "Menu" }}
+        />
+        <ChatbotHeaderActions>
+          {inDebugMode() && (
+            <DebugSettingsModal
+              bypassTools={bypassTools}
+              setBypassTools={setBypassTools}
+            />
+          )}
+        </ChatbotHeaderActions>
+        <ChatbotHeaderNewChatButton
+          data-testid="header-new-chat-button"
+          onClick={() => setCurrentConversation(undefined, [])}
+        />
+      </ChatbotHeaderMain>
+    </ChatbotHeader>
+  );
+
+  const header = props.renderHeader
+    ? props.renderHeader({
+        isDrawerOpen,
+        setIsDrawerOpen,
+        historyRef,
+        setCurrentConversation,
+        inDebugMode: inDebugMode(),
+        bypassTools,
+        setBypassTools,
+        selectedModel,
+        setSelectedModel,
+        models,
+        bodyElement,
+      })
+    : defaultHeader;
+
   return (
     <>
       <ChatbotToggle
@@ -222,28 +280,7 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
           }}
           drawerContent={
             <>
-              <ChatbotHeader>
-                <ChatbotHeaderMain>
-                  <ChatbotHeaderMenu
-                    ref={historyRef}
-                    aria-expanded={isDrawerOpen}
-                    onMenuToggle={() => setIsDrawerOpen(!isDrawerOpen)}
-                    tooltipProps={{ appendTo: bodyElement, content: "Menu" }}
-                  />
-                  <ChatbotHeaderActions>
-                    {inDebugMode() && (
-                      <DebugSettingsModal
-                        bypassTools={bypassTools}
-                        setBypassTools={setBypassTools}
-                      />
-                    )}
-                  </ChatbotHeaderActions>
-                  <ChatbotHeaderNewChatButton
-                    data-testid="header-new-chat-button"
-                    onClick={() => setCurrentConversation(undefined, [])}
-                  />
-                </ChatbotHeaderMain>
-              </ChatbotHeader>
+              {header}
               {alertMessage && (
                 <div className="ansible-chatbot-alert-outer">
                   <div className="ansible-chatbot-alert-inner">
@@ -262,8 +299,11 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
               <ChatbotContent>
                 <MessageBox>
                   <ChatbotWelcomePrompt
-                    title={"Hello " + context?.username}
+                    title={welcomeTitle}
                     description="How may I help you today?"
+                    prompts={
+                      welcomePrompts.length > 0 ? welcomePrompts : undefined
+                    }
                   />
                   {(conversationId &&
                     setCurrentConversation(conversationId, messages)) || <></>}

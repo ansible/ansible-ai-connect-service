@@ -1,11 +1,23 @@
 import React from "react";
 import {
   AnsibleChatbot,
-  ChatbotContext,
+  ChatbotProps,
 } from "./AnsibleChatbot/AnsibleChatbot";
+import type { ChatbotConfig } from "./types/ChatbotConfig";
+
+export interface ChatbotContext {
+  username?: string | undefined;
+  config?: Partial<ChatbotConfig>;
+}
 
 export const App: React.FunctionComponent<ChatbotContext> = (
   context: ChatbotContext,
-) => <AnsibleChatbot username={context?.username} />;
+) => {
+  const props: ChatbotProps = {
+    username: context?.username,
+    ...context?.config,
+  };
+  return <AnsibleChatbot {...props} />;
+};
 
 App.displayName = "App";
