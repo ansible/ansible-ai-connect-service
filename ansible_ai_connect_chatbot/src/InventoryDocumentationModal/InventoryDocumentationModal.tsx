@@ -12,7 +12,7 @@ import {
   ListItem,
 } from "@patternfly/react-core";
 import ExternalLinkAltIcon from "@patternfly/react-icons/dist/esm/icons/external-link-alt-icon";
-import { getProductName } from "../Constants";
+import { getProductName } from "@ansible/ansible-ai-connect-chatbot";
 import lightspeedLogo from "../assets/lightspeed.svg";
 import lightspeedLogoDark from "../assets/lightspeed_dark.svg";
 
