@@ -137,7 +137,7 @@ django-deprecate-fields==0.1.2
     # via ansible-ai-connect
 django-extensions==3.2.3
     # via ansible-ai-connect
-django-health-check==3.17.0
+django-health-check==4.4.3
     # via ansible-ai-connect
 django-import-export==3.2.0
     # via ansible-ai-connect
