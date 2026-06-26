@@ -51,7 +51,7 @@ backoff==2.2.1
     # via segment-analytics-python
 black==26.3.1
     # via ansible-lint
-boto3==1.42.5
+boto3==1.43.36
     # via ansible-ai-connect
 botocore==1.42.5
     # via
