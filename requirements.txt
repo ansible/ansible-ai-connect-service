@@ -95,7 +95,7 @@ cryptography==46.0.7
     #   pyopenssl
     #   service-identity
     #   social-auth-core
-cython==3.2.2
+cython==3.2.6
     # via ansible-ai-connect
 daphne==4.2.1
     # via ansible-ai-connect
