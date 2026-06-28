@@ -178,7 +178,7 @@ frozenlist==1.8.0
     #   aiosignal
 google-api-core==2.28.1
     # via google-api-python-client
-google-api-python-client==2.187.0
+google-api-python-client==2.198.0
     # via pydrive2
 google-auth==2.43.0
     # via
