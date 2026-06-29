@@ -220,7 +220,7 @@ inflection==0.5.1
     # via
     #   django-ansible-base
     #   drf-spectacular
-ipython==8.10.0
+ipython==9.15.0
     # via ansible-ai-connect
 jedi==0.19.2
     # via ipython
