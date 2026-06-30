@@ -156,7 +156,7 @@ drf-spectacular==0.29.0
     # via
     #   ansible-ai-connect
     #   django-ansible-base
-dynaconf==3.2.13
+dynaconf==3.3.1
     # via django-ansible-base
 et-xmlfile==2.0.0
     # via openpyxl
