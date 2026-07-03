@@ -260,7 +260,7 @@ requires-dist = [
     { name = "requests", specifier = "~=2.33.0" },
     { name = "responses", marker = "extra == 'dev'", specifier = "~=0.24.1" },
     { name = "segment-analytics-python", specifier = "~=2.2.2" },
-    { name = "slack-sdk", specifier = "~=3.31.0" },
+    { name = "slack-sdk", specifier = "~=3.43.0" },
     { name = "social-auth-app-django", specifier = "~=5.6.0" },
     { name = "social-auth-core", specifier = "~=4.7.0" },
     { name = "torch-model-archiver", marker = "extra == 'dev'" },
@@ -3023,11 +3023,11 @@ wheels = [
 
 [[package]]
 name = "slack-sdk"
-version = "3.31.0"
+version = "3.43.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a5/e3/4a2491cbf793bb8da8a51120207df8c097faeda42bf720f7acf7c40e4ca8/slack_sdk-3.31.0.tar.gz", hash = "sha256:740d2f9c49cbfcbd46fca56b4be9d527934c225312aac18fd2c0fca0ef6bc935", size = 230928, upload-time = "2024-07-04T16:40:39.019Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/13/75/a4964eb771a0c74d79ee7a3bee6fb5d9718909dd1b675e80d62a6a0ad90a/slack_sdk-3.43.0.tar.gz", hash = "sha256:0553152e46c4259eb69f7464cdadc35ba4802ca10f9f5a849c92cf03d6c2ba07", size = 252769, upload-time = "2026-06-30T18:04:41.59Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/04/f4517d8403c49910f45ad91205de352f2eccf12ae28865a27da7d7d05bf6/slack_sdk-3.31.0-py2.py3-none-any.whl", hash = "sha256:a120cc461e8ebb7d9175f171dbe0ded37a6878d9f7b96b28e4bad1227399047b", size = 289845, upload-time = "2024-07-04T16:40:36.34Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/55/42141b8338d46323d5b3c6095201b044c670c20f898643b322ea9b1543a1/slack_sdk-3.43.0-py2.py3-none-any.whl", hash = "sha256:4b6557c65577fc172f685af218b811f9f3b4909e24cddd839ada09565f10c585", size = 315866, upload-time = "2026-06-30T18:04:39.636Z" },
 ]
 
 [[package]]
