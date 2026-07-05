@@ -473,7 +473,7 @@ twisted==26.4.0
     # via daphne
 txaio==25.12.1
     # via autobahn
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   aiohttp
     #   aiosignal
