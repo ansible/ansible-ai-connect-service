@@ -258,7 +258,7 @@ requires-dist = [
     { name = "pytz" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = "~=2.33.0" },
-    { name = "responses", marker = "extra == 'dev'", specifier = "~=0.24.1" },
+    { name = "responses", marker = "extra == 'dev'", specifier = "~=0.26.2" },
     { name = "segment-analytics-python", specifier = "~=2.2.2" },
     { name = "slack-sdk", specifier = "~=3.31.0" },
     { name = "social-auth-app-django", specifier = "~=5.6.0" },
@@ -2772,16 +2772,16 @@ wheels = [
 
 [[package]]
 name = "responses"
-version = "0.24.1"
+version = "0.26.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a0/c5/2f4f243e9b9ddb2fa70d696fb66daafd8fde20c9663a4a22c6a02d61bd97/responses-0.24.1.tar.gz", hash = "sha256:b127c6ca3f8df0eb9cc82fd93109a3007a86acb24871834c47b77765152ecf8c", size = 77530, upload-time = "2023-11-14T22:56:52.355Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/1a/4af3e6d659394b809838490b144e4ab8d7ed3b9fecc7ca78f5d2f79b1a3d/responses-0.26.2.tar.gz", hash = "sha256:9c9259b46a8349197edebf43cfa68a87e1a2802ef503ff8b2fecbabc0b45afd8", size = 84030, upload-time = "2026-07-03T16:44:50.325Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/70/09ab7d1f559f045513cc5456d33a55a1896914bdcf6e8508070b679d20c5/responses-0.24.1-py3-none-any.whl", hash = "sha256:a2b43f4c08bfb9c9bd242568328c65a34b318741d3fab884ac843c5ceeb543f9", size = 55117, upload-time = "2023-11-14T22:56:52.355Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/28/693e1d9ebf72baa062ded80d837a035b86ce75eda5a269379e9e2b1008a8/responses-0.26.2-py3-none-any.whl", hash = "sha256:6fdfeabd58e5ec473b98dfe02e6d46d3173bd8dd573eff2ccccf1a05a5135364", size = 35609, upload-time = "2026-07-03T16:44:49.1Z" },
 ]
 
 [[package]]
