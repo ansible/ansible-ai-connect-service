@@ -172,10 +172,19 @@ jobs:
         working-directory: spec-repo
         env:
           GH_TOKEN: ${{ secrets.OPENAPI_SPEC_SYNC_TOKEN }}
+          GPG_PRIVATE_KEY: ${{ secrets.OPENAPI_SPEC_SYNC_GPG_PRIVATE_KEY }}
         run: |
-          # Configure git
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Import GPG key and configure git for signed commits
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import 2>/dev/null
+          GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format long 2>/dev/null | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          if [ -z "$GPG_KEY_ID" ]; then
+            echo "❌ Failed to import GPG key or extract key ID"
+            exit 1
+          fi
+          git config user.name "aap-api-bot"
+          git config user.email "aap-api-bot@redhat.com"
+          git config commit.gpgsign true
+          git config user.signingkey "$GPG_KEY_ID"
 
           # Create branch for PR
           SHORT_SHA="${{ github.sha }}"
