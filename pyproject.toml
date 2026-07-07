@@ -14,7 +14,7 @@ dependencies = [
   'boto3~=1.40',
   'cbor2~=5.9.0',
   'cython',
-  'daphne~=4.2.1',
+  'daphne~=4.2.2',
   'Django~=5.2.15',
   'django-deprecate-fields~=0.1.1',
   'django-extensions~=3.2.1',
@@ -89,10 +89,11 @@ constraint-dependencies = [
   # Use Red Hat's system-certifi for certificate handling
   'certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9',
   'pyopenssl>=26.0.0',
-  'cryptography>=46.0.7',
+  'cryptography>=48.0.1',
   'dynaconf>=3.2.13',
   'pyjwt>=2.13.0',
-  'ujson>=5.12.1',
+  'ujson>=5.13.0',
+  'msgpack>=1.2.1',
   'twisted>=26.4.0',
   'pygments>=2.20.0',
 ]

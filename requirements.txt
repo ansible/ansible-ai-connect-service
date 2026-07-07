@@ -86,7 +86,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   tqdm
 constantly==23.10.4
     # via twisted
-cryptography==46.0.7
+cryptography==49.0.0
     # via
     #   ansible-core
     #   autobahn
@@ -97,7 +97,7 @@ cryptography==46.0.7
     #   social-auth-core
 cython==3.2.2
     # via ansible-ai-connect
-daphne==4.2.1
+daphne==4.2.2
     # via ansible-ai-connect
 decorator==5.2.1
     # via ipython
@@ -257,7 +257,7 @@ mdurl==0.1.2
     # via markdown-it-py
 monotonic==1.6
     # via segment-analytics-python
-msgpack==1.1.2 ; platform_python_implementation == 'CPython'
+msgpack==1.2.1 ; platform_python_implementation == 'CPython'
     # via autobahn
 multidict==6.7.0
     # via
@@ -358,7 +358,7 @@ pyjwt==2.13.0
     # via
     #   django-ansible-base
     #   social-auth-core
-pyopenssl==26.0.0
+pyopenssl==26.3.0
     # via
     #   pydrive2
     #   twisted
@@ -497,7 +497,7 @@ tzdata==2025.2
     #   psycopg
 u-msgpack-python==2.8.0 ; platform_python_implementation != 'CPython'
     # via autobahn
-ujson==5.12.1
+ujson==5.13.0
     # via autobahn
 uritemplate==4.2.0
     # via
