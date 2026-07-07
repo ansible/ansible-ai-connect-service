@@ -75,7 +75,7 @@
                         "description": "Service unavailable"
                     }
                 },
-                "x-ai-description": "Create new ai chat"
+                "x-ai-description": "Query the Ansible Automation Platform knowledge base. Use this to answer questions about AAP concepts, features, configuration, best practices, and troubleshooting."
             }
         },
         "/ai/completions/": {

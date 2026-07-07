@@ -1151,6 +1151,11 @@ class Chat(AACSAPIView):
             503: OpenApiResponse(description="Service unavailable"),
         },
         summary="Chat request",
+        extensions={
+            "x-ai-description": "Query the Ansible Automation Platform knowledge base."
+            " Use this to answer questions about AAP concepts, features,"
+            " configuration, best practices, and troubleshooting.",
+        },
     )
     def post(self, request) -> Response:
         headers = {"Content-Type": "application/json"}
