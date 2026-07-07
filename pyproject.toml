@@ -12,7 +12,7 @@ dependencies = [
   'ansible-anonymizer~=1.5.0',
   'ansible-lint~=25.5.0',
   'boto3~=1.40',
-  'cbor2~=5.9.0',
+  'cbor2~=6.1.3',
   'cython',
   'daphne~=4.2.1',
   'Django~=5.2.15',
