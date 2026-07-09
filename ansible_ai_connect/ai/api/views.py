@@ -102,6 +102,7 @@ from ansible_ai_connect.ai.api.utils.segment import send_schema1_event
 from ansible_ai_connect.ai.api.utils.segment_analytics_telemetry import (
     send_segment_analytics_event,
 )
+from ansible_ai_connect.users.constants import USER_SOCIAL_AUTH_PROVIDER_AAP
 from ansible_ai_connect.users.models import User
 
 from ...main.permissions import IsAAPUser, IsRHInternalUser, IsTestUser
@@ -289,14 +290,72 @@ class AACSAPIView(APIView):
         return None
 
     @staticmethod
+    def _get_gateway_access_token(user) -> str | None:
+        """Exchange a user's stored AAP refresh token for a Gateway OAuth2 access token."""
+        cache_key = f"mcp_gateway_token_{user.id}"
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+
+        from social_django.models import UserSocialAuth
+
+        try:
+            social = UserSocialAuth.objects.get(
+                user=user,
+                provider=USER_SOCIAL_AUTH_PROVIDER_AAP,
+            )
+        except UserSocialAuth.DoesNotExist:
+            logger.debug("No AAP social auth record for user %s", user.id)
+            return None
+
+        refresh_token = social.extra_data.get("refresh_token")
+        if not refresh_token:
+            logger.debug("No refresh token stored for user %s", user.id)
+            return None
+
+        import requests as http_requests
+
+        resp = http_requests.post(
+            f"{settings.AAP_API_URL}/o/token/",
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": settings.SOCIAL_AUTH_AAP_KEY,
+                "client_secret": settings.SOCIAL_AUTH_AAP_SECRET,
+            },
+        )
+        if resp.status_code != 200:
+            logger.warning("Gateway token exchange failed: %s", resp.status_code)
+            return None
+
+        token_data = resp.json()
+        access_token = token_data["access_token"]
+        expires_in = max(token_data.get("expires_in", 3600) - 600, 60)
+        cache.set(cache_key, access_token, timeout=expires_in)
+
+        new_refresh = token_data.get("refresh_token")
+        if new_refresh and new_refresh != refresh_token:
+            social.extra_data["refresh_token"] = new_refresh
+            social.save(update_fields=["extra_data"])
+
+        return access_token
+
+    @staticmethod
     def get_mcp_headers(request: Request, config: HttpConfiguration) -> dict:
         mcp_headers = {}
         jwt_header_name = "X-DAB-JW-TOKEN"
         token = request.headers.get(jwt_header_name, None)
         user = request.user
-        if token and user.is_authenticated and user.aap_user:
+        if token and user.is_authenticated and user.aap_user and config.mcp_servers:
+            gateway_token = AACSAPIView._get_gateway_access_token(user)
             for mcp_server in config.mcp_servers:
-                if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
+                if mcp_server["type"] == "mcp-server" and gateway_token:
+                    logger.debug(
+                        f"Setting MCP header - server_type: {mcp_server['type']}, "
+                        f"server_name: {mcp_server['name']}, header_name: Authorization"
+                    )
+                    mcp_headers[mcp_server["name"]] = {"Authorization": f"Bearer {gateway_token}"}
+                elif mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
                     logger.debug(
                         f"Setting MCP header - server_type: {mcp_server['type']}, "
                         f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
