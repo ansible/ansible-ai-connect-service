@@ -1152,9 +1152,9 @@ class Chat(AACSAPIView):
         },
         summary="Chat request",
         extensions={
-            "x-ai-description": "Query the Ansible Automation Platform knowledge base."
-            " Use this to answer questions about AAP concepts, features,"
-            " configuration, best practices, and troubleshooting.",
+            "x-ai-description": "Query the Ansible Automation Platform RAG database"
+            " for documentation and product guidance on installing, configuring,"
+            " and using AAP.",
         },
     )
     def post(self, request) -> Response:
