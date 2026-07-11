@@ -265,7 +265,7 @@ multidict==6.7.0
     #   yarl
 mypy-extensions==1.1.0
     # via black
-numpy==2.3.5
+numpy==2.5.1
     # via pandas
 oauth2client==4.1.3
     # via pydrive2
