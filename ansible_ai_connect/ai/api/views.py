@@ -347,12 +347,16 @@ class AACSAPIView(APIView):
         token = request.headers.get(jwt_header_name, None)
         user = request.user
         logger.info(
-            f"get_mcp_headers: token:{token} is_authenticated:{user.is_authenticated} "
-            f"aap_user:{user.aap_user} mcp_servers:{config.mcp_servers}"
+            f"get_mcp_headers: token:{token}\n"
+            f"is_authenticated:{user.is_authenticated}\n"
+            f"aap_user:{user.aap_user}\n"
+            f"mcp_servers:{config.mcp_servers}"
         )
         if token and user.is_authenticated and user.aap_user and config.mcp_servers:
             gateway_token = AACSAPIView._get_gateway_access_token(user)
+            logger.info(f"gateway_token:{gateway_token}")
             for mcp_server in config.mcp_servers:
+                logger.info(f"mcp_server:{mcp_server}")
                 if mcp_server["type"] == "mcp-server" and gateway_token:
                     logger.info(
                         f"Setting MCP header - server_type: {mcp_server['type']}, "
