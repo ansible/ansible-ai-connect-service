@@ -23,7 +23,10 @@ from social_django.models import UserSocialAuth
 
 from ansible_ai_connect.ai.api.utils.segment import send_segment_group
 from ansible_ai_connect.organizations.models import Organization
-from ansible_ai_connect.users.constants import RHSSO_LIGHTSPEED_SCOPE
+from ansible_ai_connect.users.constants import (
+    RHSSO_LIGHTSPEED_SCOPE,
+    USER_SOCIAL_AUTH_PROVIDER_AAP,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -139,14 +142,44 @@ def redhat_organization(backend, user, response, *args, **kwargs):
     }
 
 
+def aap_associate_existing_user(backend, details, user=None, *args, **kwargs):
+    """Match incoming AAP OAuth2 user to an existing Django user by username.
+
+    When a JWT-authenticated user completes the OAuth2 flow, social_user
+    finds no existing UserSocialAuth and clears the user. Without this step,
+    create_user would create a duplicate. Instead, we look up the existing
+    user by username so associate_user links the social auth to the right
+    account.
+    """
+    if user or not backend or backend.name != USER_SOCIAL_AUTH_PROVIDER_AAP:
+        return
+    username = details.get("username")
+    if not username:
+        return
+    User = get_user_model()
+    try:
+        existing = User.objects.get(username=username)
+        return {"user": existing, "is_new": False}
+    except User.DoesNotExist:
+        return
+
+
 class AuthAlreadyLoggedIn(AuthException):
     def __str__(self):
         return "User already logged in"
 
 
 def block_auth_users(backend=None, details=None, response=None, user=None, *args, **kwargs):
-    """Safeguard to be sure user won't get multiple providers"""
+    """Safeguard to be sure user won't get multiple providers.
+
+    AAP OAuth2 backend is always allowed through so that JWT-authenticated
+    users can complete the OAuth2 flow to obtain refresh tokens for MCP
+    tool access.
+    """
     if user:
+        backend_name = getattr(backend, "name", None) if backend else None
+        if backend_name == USER_SOCIAL_AUTH_PROVIDER_AAP:
+            return
         raise AuthAlreadyLoggedIn(backend)
 
 
@@ -158,6 +191,7 @@ def load_extra_data(backend, details, response, uid, user, *args, **kwargs):
         extra_data = backend.extra_data(user, uid, response, details, *args, **kwargs)
         user.external_username = extra_data.get("login")
         user.save()
+        social.extra_data.update(extra_data)
         social.extra_data["aap_licensed"] = (
             extra_data.get("aap_licensed") if user.is_aap_user() else False
         )
