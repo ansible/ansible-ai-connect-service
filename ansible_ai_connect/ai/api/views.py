@@ -357,18 +357,18 @@ class AACSAPIView(APIView):
             logger.info(f"gateway_token:{gateway_token}")
             for mcp_server in config.mcp_servers:
                 logger.info(f"mcp_server:{mcp_server}")
-                if mcp_server["type"] == "mcp-server" and gateway_token:
-                    logger.info(
-                        f"Setting MCP header - server_type: {mcp_server['type']}, "
-                        f"server_name: {mcp_server['name']}, header_name: Authorization"
-                    )
-                    mcp_headers[mcp_server["name"]] = {"X-Authorization": f"Bearer {gateway_token}"}
-                elif mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
-                    logger.info(
-                        f"Setting MCP header - server_type: {mcp_server['type']}, "
-                        f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
-                    )
-                    mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
+                # if mcp_server["type"] == "mcp-server" and gateway_token:
+                logger.info(
+                    f"Setting MCP header - server_type: {mcp_server['type']}, "
+                    f"server_name: {mcp_server['name']}, header_name: X-Authorization"
+                )
+                mcp_headers[mcp_server["name"]] = {"X-Authorization": f"Bearer {gateway_token}"}
+                # elif mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
+                #     logger.info(
+                #         f"Setting MCP header - server_type: {mcp_server['type']}, "
+                #         f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
+                #     )
+                #     mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
                 # This functionality seems experimental for gateway and does not allow the user to
                 # access wide range of api endpoints, we need to find a solution for gateway,
                 # but for the moment comment this code.
