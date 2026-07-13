@@ -305,12 +305,12 @@ class AACSAPIView(APIView):
                 provider=USER_SOCIAL_AUTH_PROVIDER_AAP,
             )
         except UserSocialAuth.DoesNotExist:
-            logger.debug("No AAP social auth record for user %s", user.id)
+            logger.info("No AAP social auth record for user %s", user.id)
             return None
 
         refresh_token = social.extra_data.get("refresh_token")
         if not refresh_token:
-            logger.debug("No refresh token stored for user %s", user.id)
+            logger.info("No refresh token stored for user %s", user.id)
             return None
 
         import requests as http_requests
