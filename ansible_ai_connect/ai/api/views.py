@@ -346,6 +346,10 @@ class AACSAPIView(APIView):
         jwt_header_name = "X-DAB-JW-TOKEN"
         token = request.headers.get(jwt_header_name, None)
         user = request.user
+        logger.info(
+            f"get_mcp_headers: token:{token} is_authenticated:{user.is_authenticated} "
+            f"aap_user:{user.aap_user} mcp_servers:{config.mcp_servers}"
+        )
         if token and user.is_authenticated and user.aap_user and config.mcp_servers:
             gateway_token = AACSAPIView._get_gateway_access_token(user)
             for mcp_server in config.mcp_servers:
