@@ -350,13 +350,13 @@ class AACSAPIView(APIView):
             gateway_token = AACSAPIView._get_gateway_access_token(user)
             for mcp_server in config.mcp_servers:
                 if mcp_server["type"] == "mcp-server" and gateway_token:
-                    logger.debug(
+                    logger.info(
                         f"Setting MCP header - server_type: {mcp_server['type']}, "
                         f"server_name: {mcp_server['name']}, header_name: Authorization"
                     )
-                    mcp_headers[mcp_server["name"]] = {"Authorization": f"Bearer {gateway_token}"}
+                    mcp_headers[mcp_server["name"]] = {"X-Authorization": f"Bearer {gateway_token}"}
                 elif mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
-                    logger.debug(
+                    logger.info(
                         f"Setting MCP header - server_type: {mcp_server['type']}, "
                         f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
                     )
