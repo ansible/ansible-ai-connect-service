@@ -373,7 +373,7 @@ class AACSAPIView(APIView):
                             "response_type": "code",
                             "client_id": client_id,
                             "redirect_uri": redirect_uri,
-                            "scope": "write",
+                            "scope": settings.SOCIAL_AUTH_AAP_MCP_SCOPE,
                             "allow": "Authorize",
                         },
                         headers={
