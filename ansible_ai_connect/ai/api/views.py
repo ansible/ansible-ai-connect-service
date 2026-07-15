@@ -292,6 +292,58 @@ class AACSAPIView(APIView):
         return None
 
     @staticmethod
+    def _cache_token_response(token_data, user_id):
+        """Cache access_token and refresh_token from a Gateway token response.
+
+        Returns the access_token, or None if the response lacks one.
+        """
+        access_token = token_data.get("access_token")
+        if not access_token:
+            logger.warning("No access_token in Gateway token response")
+            return None
+
+        expires_in = max(token_data.get("expires_in", 3600) - 600, 60)
+        cache.set(f"mcp_gateway_token_{user_id}", access_token, timeout=expires_in)
+
+        new_refresh = token_data.get("refresh_token")
+        if new_refresh:
+            cache.set(
+                f"mcp_gateway_refresh_{user_id}", new_refresh, timeout=24 * 60 * 60
+            )
+
+        return access_token
+
+    @staticmethod
+    def _refresh_gateway_token(session, user_id, gateway_url, client_id, client_secret):
+        """Try to obtain an access_token using a cached refresh_token.
+
+        Returns the access_token on success, or None.
+        """
+        refresh_token = cache.get(f"mcp_gateway_refresh_{user_id}")
+        if not refresh_token:
+            return None
+
+        response = session.post(
+            f"{gateway_url}/o/token/",
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": client_id,
+                "client_secret": client_secret,
+            },
+        )
+        if not response.ok:
+            logger.warning(
+                "Gateway refresh token exchange failed: %s %s",
+                response.status_code,
+                response.text,
+            )
+            cache.delete(f"mcp_gateway_refresh_{user_id}")
+            return None
+
+        return AACSAPIView._cache_token_response(response.json(), user_id)
+
+    @staticmethod
     def get_mcp_headers(request: Request, config: HttpConfiguration) -> dict:
         mcp_headers = {}
         jwt_header_name = "X-DAB-JW-TOKEN"
@@ -309,6 +361,10 @@ class AACSAPIView(APIView):
             access_token = cache.get(cache_key)
             gateway_url = settings.AAP_API_URL
             redirect_uri = f"{settings.LIGHTSPEED_URL}/complete/aap/"
+            if not access_token:
+                access_token = AACSAPIView._refresh_gateway_token(
+                    session, user.id, gateway_url, client_id, client_secret
+                )
             if not access_token:
                 try:
                     response = session.post(
@@ -358,14 +414,11 @@ class AACSAPIView(APIView):
                         )
                         return mcp_headers
 
-                    token_data = response.json()
-                    access_token = token_data.get("access_token")
+                    access_token = AACSAPIView._cache_token_response(
+                        response.json(), user.id
+                    )
                     if not access_token:
-                        logger.warning("No access_token in Gateway token response")
                         return mcp_headers
-
-                    expires_in = max(token_data.get("expires_in", 3600) - 600, 60)
-                    cache.set(cache_key, access_token, timeout=expires_in)
                 except Exception:
                     logger.exception("MCP Gateway token exchange failed")
                     return mcp_headers
