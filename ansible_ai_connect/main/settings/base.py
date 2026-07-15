@@ -177,6 +177,7 @@ def is_ssl_enabled(value: str) -> bool:
 
 
 AAP_API_URL = os.environ.get("AAP_API_URL")
+LIGHTSPEED_URL = os.environ.get("LIGHTSPEED_URL", "")
 AAP_API_PROVIDER_NAME = os.environ.get("AAP_API_PROVIDER_NAME", "Ansible Automation Platform")
 SOCIAL_AUTH_VERIFY_SSL = is_ssl_enabled(os.getenv("SOCIAL_AUTH_VERIFY_SSL", "True"))
 SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")

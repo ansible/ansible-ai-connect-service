@@ -306,21 +306,22 @@ class AACSAPIView(APIView):
             session.verify = False
             access_token = _AUTH_ACCESS.get(user.id, {}).get("access_token", None)
             # need to check expires_in
+            gateway_url = settings.AAP_API_URL
+            redirect_uri = f"{settings.LIGHTSPEED_URL}/complete/aap/"
             if not access_token:
-                response = session.post("https://localhost/o/authorize/",
+                response = session.post(
+                    f"{gateway_url}/o/authorize/",
                     data={
                         "response_type": "code",
                         "client_id": client_id,
-                        # important we need to get this url from environment setup
-                        # otherwise this will fail
-                        "redirect_uri": "http://aap.foo.redhat.com:7080/complete/aap/",
+                        "redirect_uri": redirect_uri,
                         "scope": "write",
-                        "allow": "Authorize",  # This is the approval button
+                        "allow": "Authorize",
                     },
                     headers={
                         "X-CSRFToken": csrf_token,
                         "Cookie": cookie,
-                        "Referer": "https://localhost/",
+                        "Referer": f"{gateway_url}/",
                     },
                     allow_redirects=False,
                     verify=False,
@@ -331,13 +332,11 @@ class AACSAPIView(APIView):
                 redirect_url = response.headers["Location"]
                 code = parse_qs(urlparse(redirect_url).query)["code"][0]
                 response = session.post(
-                    "https://localhost/o/token/",
+                    f"{gateway_url}/o/token/",
                     data={
                         "grant_type": "authorization_code",
                         "code": code,
-                        # important we need to get this url from environment setup
-                        # otherwise this will fail
-                        "redirect_uri": "http://aap.foo.redhat.com:7080/complete/aap/",
+                        "redirect_uri": redirect_uri,
                         "client_id": client_id,
                         "client_secret": client_secret,
                     },
