@@ -367,7 +367,11 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "INFO"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "level": os.getenv("DJANGO_LOG_LEVEL") or "INFO",
+        },
     },
     "loggers": {
         "django": {
