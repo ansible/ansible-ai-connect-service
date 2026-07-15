@@ -303,7 +303,7 @@ class AACSAPIView(APIView):
             csrf_token = request.headers.get("X-CSRFToken", None)
             cookie = request.headers.get("Cookie", None)
             session = requests.Session()
-            session.verify = False
+            session.verify = settings.SOCIAL_AUTH_VERIFY_SSL
             cache_key = f"mcp_gateway_token_{user.id}"
             access_token = cache.get(cache_key)
             gateway_url = settings.AAP_API_URL
@@ -324,7 +324,6 @@ class AACSAPIView(APIView):
                         "Referer": f"{gateway_url}/",
                     },
                     allow_redirects=False,
-                    verify=False,
                 )
 
                 from urllib.parse import urlparse, parse_qs
@@ -340,7 +339,6 @@ class AACSAPIView(APIView):
                         "client_id": client_id,
                         "client_secret": client_secret,
                     },
-                    verify=False,
                 )
                 token_data = response.json()
                 access_token = token_data["access_token"]
