@@ -17,6 +17,7 @@ import logging
 import time
 import traceback
 from string import Template
+from urllib.parse import parse_qs, urlparse
 
 from ansible_anonymizer import anonymizer
 from ansible_base.lib.utils.schema import extend_schema_if_available
@@ -34,6 +35,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import requests as http_requests
 
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
@@ -297,12 +299,11 @@ class AACSAPIView(APIView):
         token = request.headers.get(jwt_header_name, None)
         user = request.user
         if token and user.is_authenticated and user.aap_user and config.mcp_servers:
-            import requests
             client_id = settings.SOCIAL_AUTH_AAP_KEY
             client_secret = settings.SOCIAL_AUTH_AAP_SECRET
             csrf_token = request.headers.get("X-CSRFToken", None)
             cookie = request.headers.get("Cookie", None)
-            session = requests.Session()
+            session = http_requests.Session()
             session.verify = settings.SOCIAL_AUTH_VERIFY_SSL
             cache_key = f"mcp_gateway_token_{user.id}"
             access_token = cache.get(cache_key)
@@ -310,8 +311,6 @@ class AACSAPIView(APIView):
             redirect_uri = f"{settings.LIGHTSPEED_URL}/complete/aap/"
             if not access_token:
                 try:
-                    from urllib.parse import urlparse, parse_qs
-
                     response = session.post(
                         f"{gateway_url}/o/authorize/",
                         data={
