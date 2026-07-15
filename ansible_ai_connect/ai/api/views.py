@@ -309,41 +309,67 @@ class AACSAPIView(APIView):
             gateway_url = settings.AAP_API_URL
             redirect_uri = f"{settings.LIGHTSPEED_URL}/complete/aap/"
             if not access_token:
-                response = session.post(
-                    f"{gateway_url}/o/authorize/",
-                    data={
-                        "response_type": "code",
-                        "client_id": client_id,
-                        "redirect_uri": redirect_uri,
-                        "scope": "write",
-                        "allow": "Authorize",
-                    },
-                    headers={
-                        "X-CSRFToken": csrf_token,
-                        "Cookie": cookie,
-                        "Referer": f"{gateway_url}/",
-                    },
-                    allow_redirects=False,
-                )
+                try:
+                    from urllib.parse import urlparse, parse_qs
 
-                from urllib.parse import urlparse, parse_qs
+                    response = session.post(
+                        f"{gateway_url}/o/authorize/",
+                        data={
+                            "response_type": "code",
+                            "client_id": client_id,
+                            "redirect_uri": redirect_uri,
+                            "scope": "write",
+                            "allow": "Authorize",
+                        },
+                        headers={
+                            "X-CSRFToken": csrf_token,
+                            "Cookie": cookie,
+                            "Referer": f"{gateway_url}/",
+                        },
+                        allow_redirects=False,
+                    )
 
-                redirect_url = response.headers["Location"]
-                code = parse_qs(urlparse(redirect_url).query)["code"][0]
-                response = session.post(
-                    f"{gateway_url}/o/token/",
-                    data={
-                        "grant_type": "authorization_code",
-                        "code": code,
-                        "redirect_uri": redirect_uri,
-                        "client_id": client_id,
-                        "client_secret": client_secret,
-                    },
-                )
-                token_data = response.json()
-                access_token = token_data["access_token"]
-                expires_in = max(token_data.get("expires_in", 3600) - 600, 60)
-                cache.set(cache_key, access_token, timeout=expires_in)
+                    redirect_url = response.headers.get("Location")
+                    if not redirect_url:
+                        logger.warning(
+                            "Gateway authorize did not redirect: %s", response.status_code
+                        )
+                        return mcp_headers
+
+                    codes = parse_qs(urlparse(redirect_url).query).get("code", [])
+                    if not codes:
+                        logger.warning("No authorization code in Gateway redirect URL")
+                        return mcp_headers
+
+                    response = session.post(
+                        f"{gateway_url}/o/token/",
+                        data={
+                            "grant_type": "authorization_code",
+                            "code": codes[0],
+                            "redirect_uri": redirect_uri,
+                            "client_id": client_id,
+                            "client_secret": client_secret,
+                        },
+                    )
+                    if not response.ok:
+                        logger.warning(
+                            "Gateway token exchange failed: %s %s",
+                            response.status_code,
+                            response.text,
+                        )
+                        return mcp_headers
+
+                    token_data = response.json()
+                    access_token = token_data.get("access_token")
+                    if not access_token:
+                        logger.warning("No access_token in Gateway token response")
+                        return mcp_headers
+
+                    expires_in = max(token_data.get("expires_in", 3600) - 600, 60)
+                    cache.set(cache_key, access_token, timeout=expires_in)
+                except Exception:
+                    logger.exception("MCP Gateway token exchange failed")
+                    return mcp_headers
 
             for mcp_server in config.mcp_servers:
                 # if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed", "mcp-server"]:
