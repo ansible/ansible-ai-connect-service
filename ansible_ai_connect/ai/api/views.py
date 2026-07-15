@@ -314,7 +314,7 @@ class AACSAPIView(APIView):
         return access_token
 
     @staticmethod
-    def _refresh_gateway_token(session, user_id, gateway_url, client_id, client_secret):
+    def _refresh_gateway_token(user_id, gateway_url, client_id, client_secret, ssl_verify):
         """Try to obtain an access_token using a cached refresh_token.
 
         Returns the access_token on success, or None.
@@ -323,7 +323,7 @@ class AACSAPIView(APIView):
         if not refresh_token:
             return None
 
-        response = session.post(
+        response = http_requests.post(
             f"{gateway_url}/o/token/",
             data={
                 "grant_type": "refresh_token",
@@ -331,6 +331,7 @@ class AACSAPIView(APIView):
                 "client_id": client_id,
                 "client_secret": client_secret,
             },
+            verify=ssl_verify,
         )
         if not response.ok:
             logger.warning(
@@ -355,19 +356,18 @@ class AACSAPIView(APIView):
             client_secret = settings.SOCIAL_AUTH_AAP_SECRET
             csrf_token = request.headers.get("X-CSRFToken", None)
             cookie = request.headers.get("Cookie", None)
-            session = http_requests.Session()
-            session.verify = settings.SOCIAL_AUTH_VERIFY_SSL
+            ssl_verify = settings.SOCIAL_AUTH_VERIFY_SSL
             cache_key = f"mcp_gateway_token_{user.id}"
             access_token = cache.get(cache_key)
             gateway_url = settings.AAP_API_URL
             redirect_uri = f"{settings.LIGHTSPEED_URL}/complete/aap/"
             if not access_token:
                 access_token = AACSAPIView._refresh_gateway_token(
-                    session, user.id, gateway_url, client_id, client_secret
+                    user.id, gateway_url, client_id, client_secret, ssl_verify
                 )
             if not access_token:
                 try:
-                    response = session.post(
+                    response = http_requests.post(
                         f"{gateway_url}/o/authorize/",
                         data={
                             "response_type": "code",
@@ -382,6 +382,7 @@ class AACSAPIView(APIView):
                             "Referer": f"{gateway_url}/",
                         },
                         allow_redirects=False,
+                        verify=ssl_verify,
                     )
 
                     redirect_url = response.headers.get("Location")
@@ -396,7 +397,7 @@ class AACSAPIView(APIView):
                         logger.warning("No authorization code in Gateway redirect URL")
                         return mcp_headers
 
-                    response = session.post(
+                    response = http_requests.post(
                         f"{gateway_url}/o/token/",
                         data={
                             "grant_type": "authorization_code",
@@ -405,6 +406,7 @@ class AACSAPIView(APIView):
                             "client_id": client_id,
                             "client_secret": client_secret,
                         },
+                        verify=ssl_verify,
                     )
                     if not response.ok:
                         logger.warning(
