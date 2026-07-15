@@ -183,6 +183,7 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
+  const [pendingOAuth2Url, setPendingOAuth2Url] = useState<string | null>(null);
 
   // Workaround for the lag issue of the conversation_id state value.
   const getConversationId = () => {
@@ -565,7 +566,7 @@ export const useChatbot = () => {
                   const errorData = await resp.json();
                   const loginUrl = getOAuth2LoginUrl(errorData);
                   if (loginUrl) {
-                    window.location.href = loginUrl;
+                    setPendingOAuth2Url(loginUrl);
                     return;
                   }
                 } catch {
@@ -707,7 +708,7 @@ export const useChatbot = () => {
                 const errorData = await resp.json();
                 const loginUrl = getOAuth2LoginUrl(errorData);
                 if (loginUrl) {
-                  window.location.href = loginUrl;
+                  setPendingOAuth2Url(loginUrl);
                   return;
                 }
               } catch {
@@ -776,5 +777,7 @@ export const useChatbot = () => {
     isStreamingSupported,
     bypassTools,
     setBypassTools,
+    pendingOAuth2Url,
+    setPendingOAuth2Url,
   };
 };

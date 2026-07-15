@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ExpandableSection } from "@patternfly/react-core";
+import {
+  Button,
+  ExpandableSection,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import ChatbotContent from "@patternfly/chatbot/dist/dynamic/ChatbotContent";
 import ChatbotWelcomePrompt from "@patternfly/chatbot/dist/dynamic/ChatbotWelcomePrompt";
 import ChatbotFooter, {
@@ -109,6 +117,8 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
     isStreamingSupported,
     bypassTools,
     setBypassTools,
+    pendingOAuth2Url,
+    setPendingOAuth2Url,
   } = useChatbot();
   const [chatbotVisible, setChatbotVisible] = useState<boolean>(true);
   const [displayMode] = useState<ChatbotDisplayMode>(
@@ -352,6 +362,44 @@ export const AnsibleChatbot: React.FunctionComponent<ChatbotContext> = (
           }
         ></ChatbotConversationHistoryNav>
       </Chatbot>
+      <Modal
+        variant={ModalVariant.small}
+        isOpen={pendingOAuth2Url !== null}
+        onClose={() => setPendingOAuth2Url(null)}
+        aria-labelledby="oauth2-auth-required-title"
+        aria-describedby="oauth2-auth-required-body"
+      >
+        <ModalHeader
+          title="Authentication Required"
+          labelId="oauth2-auth-required-title"
+        />
+        <ModalBody id="oauth2-auth-required-body">
+          To use MCP server tools, additional authentication with the AAP
+          Gateway is required. Clicking OK will redirect you to the
+          authorization page. After completing the login, you will be returned
+          to this page.
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            key="confirm"
+            variant="primary"
+            onClick={() => {
+              if (pendingOAuth2Url) {
+                window.location.href = pendingOAuth2Url;
+              }
+            }}
+          >
+            OK
+          </Button>
+          <Button
+            key="cancel"
+            variant="link"
+            onClick={() => setPendingOAuth2Url(null)}
+          >
+            Cancel
+          </Button>
+        </ModalFooter>
+      </Modal>
     </>
   );
 };
