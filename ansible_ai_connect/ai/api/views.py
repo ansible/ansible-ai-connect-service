@@ -183,7 +183,7 @@ PERMISSIONS_MAP = {
 # CVE-2026-0598: conversation ownership tracking (24-hour TTL matches typical session lifetime)
 _CONVERSATION_OWNER_CACHE_TIMEOUT = 24 * 60 * 60
 
-_AUTH_ACCESS = {}
+
 
 def _claim_or_verify_conversation_ownership(conversation_id: str, user_uuid) -> bool:
     """
@@ -304,8 +304,8 @@ class AACSAPIView(APIView):
             cookie = request.headers.get("Cookie", None)
             session = requests.Session()
             session.verify = False
-            access_token = _AUTH_ACCESS.get(user.id, {}).get("access_token", None)
-            # need to check expires_in
+            cache_key = f"mcp_gateway_token_{user.id}"
+            access_token = cache.get(cache_key)
             gateway_url = settings.AAP_API_URL
             redirect_uri = f"{settings.LIGHTSPEED_URL}/complete/aap/"
             if not access_token:
@@ -342,9 +342,10 @@ class AACSAPIView(APIView):
                     },
                     verify=False,
                 )
-                # need to cache this auth using this contains alose the "expires_in"
-                _AUTH_ACCESS[user.id] = response.json()
-                access_token = _AUTH_ACCESS[user.id]["access_token"]
+                token_data = response.json()
+                access_token = token_data["access_token"]
+                expires_in = max(token_data.get("expires_in", 3600) - 600, 60)
+                cache.set(cache_key, access_token, timeout=expires_in)
 
             for mcp_server in config.mcp_servers:
                 # if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed", "mcp-server"]:
