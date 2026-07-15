@@ -372,26 +372,21 @@ class AACSAPIView(APIView):
                     return mcp_headers
 
             for mcp_server in config.mcp_servers:
-                # if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed", "mcp-server"]:
-                #     logger.debug(
-                #         f"Setting MCP header - server_type: {mcp_server['type']}, "
-                #         f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
-                #     )
-                #     mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
-                if mcp_server["type"] in ["mcp-server"]:
+                if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
                     logger.debug(
                         f"Setting MCP header - server_type: {mcp_server['type']}, "
-                        f"server_name: {mcp_server['name']}, header_name: {auth_header_name}"
+                        f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
                     )
-                    mcp_headers[mcp_server["name"]] = {auth_header_name: f"Bearer {access_token}"}
-                # This functionality seems experimental for gateway and does not allow the user to
-                # access wide range of api endpoints, we need to find a solution for gateway,
-                # but for the moment comment this code.
-                # elif mcp_server["type"] == "gateway":
-                #     from ansible_base.resource_registry.resource_server import get_service_token
-                #     user_ansible_id = str(user.ansible_id_for_filter)
-                #     token = get_service_token(user_id=user_ansible_id, expiration=3600)
-                #     mcp_headers[mcp_server["name"]] = {"X-ANSIBLE-SERVICE-AUTH": token}
+                    mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
+                elif mcp_server["type"] == "mcp-server":
+                    if access_token:
+                        logger.debug(
+                            f"Setting MCP header - server_type: {mcp_server['type']}, "
+                            f"server_name: {mcp_server['name']}, header_name: {auth_header_name}"
+                        )
+                        mcp_headers[mcp_server["name"]] = {
+                            auth_header_name: f"Bearer {access_token}"
+                        }
 
         return mcp_headers
 
