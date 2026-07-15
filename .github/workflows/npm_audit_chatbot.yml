@@ -10,12 +10,14 @@ on:
       - 'stable-*'
     paths:
       - ansible_ai_connect_chatbot/**
+      - aap_chatbot/**
   pull_request:
     branches:
       - main
       - 'stable-*'
     paths:
       - ansible_ai_connect_chatbot/**
+      - aap_chatbot/**
 
 jobs:
   lint:
@@ -34,6 +36,10 @@ jobs:
           node-version: '21.x'
           cache: 'npm'
           cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
+
+      - name: Build aap_chatbot dependency
+        run: npm ci && npm run build
+        working-directory: ./aap_chatbot
 
       - name: Install Dependencies
         run: npm ci

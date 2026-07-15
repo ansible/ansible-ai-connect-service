@@ -41,11 +41,6 @@ RUN /usr/bin/python3.12 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3.12 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
 
-# Address GHSA-79v4-65xg-pq4g and the fact jwcrypto prevent us from pulling cryptography 44.0.1
-# Please remove once jwcrypto and cryptography can be both upgraded
-RUN dnf install -y openssl-devel
-RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
-
 RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
 RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
 RUN mkdir /var/run/uwsgi /var/run/daphne
@@ -69,6 +64,17 @@ COPY ansible_ai_connect_admin_portal/tsconfig.json /tmp/ansible_ai_connect_admin
 RUN cd /tmp/ansible_ai_connect_admin_portal && npx update-browserslist-db@latest
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal ci
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal run build
+
+# Compile React/TypeScript aap_chatbot library (dependency of ansible_ai_connect_chatbot)
+# Copy each source folder individually to avoid copying 'node_modules'
+COPY aap_chatbot/src /tmp/aap_chatbot/src
+COPY aap_chatbot/index.html /tmp/aap_chatbot/index.html
+COPY aap_chatbot/package.json /tmp/aap_chatbot/package.json
+COPY aap_chatbot/package-lock.json /tmp/aap_chatbot/package-lock.json
+COPY aap_chatbot/tsconfig.json /tmp/aap_chatbot/tsconfig.json
+COPY aap_chatbot/vite.config.ts /tmp/aap_chatbot/vite.config.ts
+RUN npm --prefix /tmp/aap_chatbot install
+RUN npm --prefix /tmp/aap_chatbot run build
 
 # Compile React/TypeScript Chatbot application
 # Copy each source folder individually to avoid copying 'node_modules'

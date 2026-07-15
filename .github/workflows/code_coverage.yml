@@ -107,6 +107,10 @@ jobs:
           cache: "npm"
           cache-dependency-path: ./ansible_ai_connect_chatbot/package-lock.json
 
+      - name: Build aap_chatbot dependency (chatbot)
+        run: npm ci && npm run build
+        working-directory: ./aap_chatbot
+
       - name: Install Dependencies (TypeScript) (chatbot)
         run: npm ci
         working-directory: ./ansible_ai_connect_chatbot

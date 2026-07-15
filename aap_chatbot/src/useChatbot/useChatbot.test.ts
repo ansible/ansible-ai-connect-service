@@ -168,6 +168,124 @@ describe("feedbackMessage", () => {
   });
 });
 
+describe("feedbackMessage - includeQueryInFeedbackUrl", () => {
+  it("should exclude query and response from GitHub issue URL when includeQueryInFeedbackUrl is false", () => {
+    let capturedUrl = "";
+    vi.stubGlobal("open", (url: string) => {
+      capturedUrl = url;
+      return { focus: vi.fn() };
+    });
+
+    const feedback: ChatFeedback = {
+      sentiment: Sentiment.THUMBS_DOWN,
+      query: "secret query",
+      response: {
+        conversation_id: "",
+        response: "secret response",
+        referenced_documents: [],
+        truncated: false,
+      },
+      message: {
+        role: "user",
+        content: "This is a test message",
+        name: "User",
+        avatar: "user_avatar",
+        quickResponses: [],
+        referenced_documents: [],
+      },
+    };
+    const message: MessageProps = feedbackMessage(
+      feedback,
+      CONVERSATION_ID,
+      false,
+    );
+
+    expect(message.quickResponses).toHaveLength(1);
+    message.quickResponses![0].onClick!();
+    expect(capturedUrl).not.toContain("secret+query");
+    expect(capturedUrl).not.toContain("secret+response");
+    expect(capturedUrl).toContain("conversation_id");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("should include query and response when includeQueryInFeedbackUrl is true", () => {
+    let capturedUrl = "";
+    vi.stubGlobal("open", (url: string) => {
+      capturedUrl = url;
+      return { focus: vi.fn() };
+    });
+
+    const feedback: ChatFeedback = {
+      sentiment: Sentiment.THUMBS_DOWN,
+      query: "my query",
+      response: {
+        conversation_id: "",
+        response: "my response",
+        referenced_documents: [],
+        truncated: false,
+      },
+      message: {
+        role: "user",
+        content: "This is a test message",
+        name: "User",
+        avatar: "user_avatar",
+        quickResponses: [],
+        referenced_documents: [],
+      },
+    };
+    const message: MessageProps = feedbackMessage(
+      feedback,
+      CONVERSATION_ID,
+      true,
+    );
+
+    expect(message.quickResponses).toHaveLength(1);
+    message.quickResponses![0].onClick!();
+    expect(capturedUrl).toContain("my+query");
+    expect(capturedUrl).toContain("my+response");
+
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("useChatbot - custom config", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("should use custom apiBasePath for health check", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ "streaming-chatbot-service": "ok" }),
+    });
+    global.fetch = fetchSpy;
+
+    renderHook(() => useChatbot({ apiBasePath: "/api/v1" }));
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalledWith(
+        "/api/v1/health/status/chatbot/",
+        expect.any(Object),
+      );
+    });
+  });
+
+  it("should use first custom model as default selected model", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    });
+
+    const customModels = [
+      { model: "custom-model", provider: "custom-provider" },
+    ];
+    const { result } = renderHook(() => useChatbot({ models: customModels }));
+
+    expect(result.current.models).toEqual(customModels);
+  });
+});
+
 describe("useChatbot - fetchEventSource openWhenHidden", () => {
   beforeEach(() => {
     vi.clearAllMocks();

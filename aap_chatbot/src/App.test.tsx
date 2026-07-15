@@ -897,3 +897,32 @@ test("Test reset conversation state once unmounting the component.", async () =>
   view.unmount();
   assert(conversationStore.size === 0);
 });
+
+test("App renders with custom config", async () => {
+  mockFetch(200);
+  let rootDiv = document.getElementById("root");
+  rootDiv?.remove();
+  rootDiv = document.createElement("div");
+  rootDiv.setAttribute("id", "root");
+
+  const view = render(
+    <MemoryRouter>
+      <App
+        config={{
+          apiBasePath: "/api/v1",
+          models: [{ model: "test-model", provider: "test-provider" }],
+          welcomeTitle: "Custom Welcome",
+          welcomePrompts: [{ title: "Test Prompt", message: "Test message" }],
+        }}
+      />
+    </MemoryRouter>,
+    {
+      container: document.body.appendChild(rootDiv),
+    },
+  );
+
+  await expect.element(view.getByText("Custom Welcome")).toBeVisible();
+  await expect
+    .element(view.getByRole("button", { name: "Test Prompt" }))
+    .toBeVisible();
+});
