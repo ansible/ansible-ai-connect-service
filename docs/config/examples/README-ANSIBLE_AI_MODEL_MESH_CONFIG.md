@@ -172,9 +172,17 @@ In this example, SSL verification will use the system's default CA bundle since 
 
 In this example, SSL verification is disabled since no `ca_cert_file` is provided and `verify_ssl` is `false`.
 
+> **Security Warning:** Disabling SSL verification (`verify_ssl: false`) in production
+> creates a man-in-the-middle (MITM) risk. All HTTPS traffic between the service and the
+> model inference endpoint will be sent without certificate validation, allowing an attacker
+> on the network path to intercept or modify requests and responses. Only disable SSL
+> verification in isolated development or testing environments. In production, use
+> `ca_cert_file` to specify a custom CA certificate if the default system CA bundle does
+> not include the required certificates.
+
 ## Use Cases
 
 - **OpenShift/Kubernetes environments**: Use `ca_cert_file` to specify the service account CA certificate
 - **Internal services with custom certificates**: Use `ca_cert_file` to specify the internal CA certificate
-- **Development/testing**: Use `verify_ssl: false` to disable SSL verification
+- **Development/testing**: Use `verify_ssl: false` to disable SSL verification (**never in production** — see security warning above)
 - **Public services**: Use `verify_ssl: true` with system default CA bundle

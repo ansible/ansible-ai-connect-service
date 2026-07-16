@@ -24,7 +24,7 @@ to ensure external service connectivity works correctly with centralized SSL man
 from unittest.mock import Mock, patch
 
 import requests
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremMetaData,
@@ -157,6 +157,37 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         # Test timeout calculation with None
         self.assertIsNone(metadata.task_gen_timeout(1))
         self.assertIsNone(metadata.task_gen_timeout(5))
+
+    @override_settings(DEBUG=False)
+    @patch("ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.ssl_manager")
+    def test_ssl_disabled_logs_critical_in_production(self, mock_ssl_manager):
+        config = self._create_mock_config(verify_ssl=False)
+        mock_session = Mock(spec=requests.Session)
+        mock_ssl_manager.get_requests_session.return_value = mock_session
+
+        with self.assertLogs(
+            logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base",
+            level="CRITICAL",
+        ) as log:
+            WCAOnPremMetaData(config)
+
+        self.assertTrue(any("SSL verification is disabled" in msg for msg in log.output))
+        mock_session.mount.assert_called_once()
+
+    @override_settings(DEBUG=True)
+    @patch("ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.ssl_manager")
+    def test_ssl_disabled_no_critical_in_debug(self, mock_ssl_manager):
+        config = self._create_mock_config(verify_ssl=False)
+        mock_session = Mock(spec=requests.Session)
+        mock_ssl_manager.get_requests_session.return_value = mock_session
+
+        with self.assertNoLogs(
+            logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base",
+            level="CRITICAL",
+        ):
+            WCAOnPremMetaData(config)
+
+        mock_session.mount.assert_called_once()
 
 
 class TestWCASSLConfigurationIntegration(SimpleTestCase):

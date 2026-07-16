@@ -50,7 +50,29 @@ class AiConfig(AppConfig):
 
     def ready(self) -> None:
         self._pipeline_factory = ModelPipelineFactory()
+        self._check_tls_settings()
         return super().ready()
+
+    @staticmethod
+    def _check_tls_settings() -> None:
+        if settings.DEBUG:
+            return
+
+        if not settings.ANSIBLE_BASE_JWT_VALIDATE_CERT:
+            logger.critical(
+                "SECURITY WARNING: ANSIBLE_BASE_JWT_VALIDATE_CERT is disabled "
+                "(DEBUG=False). JWT certificate validation is OFF. "
+                "This exposes the service to man-in-the-middle attacks. "
+                "Set ANSIBLE_BASE_JWT_VALIDATE_CERT=True or remove the override."
+            )
+
+        if not settings.SOCIAL_AUTH_VERIFY_SSL:
+            logger.critical(
+                "SECURITY WARNING: SOCIAL_AUTH_VERIFY_SSL is disabled "
+                "(DEBUG=False). SSL verification for social auth is OFF. "
+                "This exposes authentication flows to man-in-the-middle attacks. "
+                "Set SOCIAL_AUTH_VERIFY_SSL=True or remove the override."
+            )
 
     def get_model_pipeline(self, feature: Type[PIPELINE_TYPE]) -> PIPELINE_TYPE:
         return self._pipeline_factory.get_pipeline(feature)
