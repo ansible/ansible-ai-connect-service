@@ -75,7 +75,7 @@ cffi==2.0.0 ; platform_python_implementation != 'PyPy'
     # via cryptography
 charset-normalizer==3.4.4
     # via requests
-click==8.3.1
+click==8.4.2
     # via
     #   black
     #   llama-stack-client
@@ -110,7 +110,7 @@ diff-match-patch==20241021
     # via django-import-export
 distro==1.9.0
     # via llama-stack-client
-django==5.2.15
+django==5.2.16
     # via
     #   ansible-ai-connect
     #   django-allow-cidr
@@ -193,7 +193,7 @@ h11==0.16.0
     # via httpcore
 httpcore==1.0.9
     # via httpx
-httplib2==0.31.0
+httplib2==0.32.0
     # via
     #   google-api-python-client
     #   google-auth-httplib2
