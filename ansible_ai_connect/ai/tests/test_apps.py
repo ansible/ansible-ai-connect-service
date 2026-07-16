@@ -272,3 +272,29 @@ class TestAiApp(WisdomServiceLogAwareTestCase):
     def test_wca_onprem_disable_wca(self):
         app_config = AppConfig.create("ansible_ai_connect.ai")
         app_config.ready()
+
+    @override_settings(DEBUG=False, ANSIBLE_BASE_JWT_VALIDATE_CERT=False)
+    def test_tls_warning_jwt_cert_disabled_production(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertLogs(logger="ansible_ai_connect.ai.apps", level="CRITICAL") as log:
+            app_config.ready()
+            self.assertInLog("ANSIBLE_BASE_JWT_VALIDATE_CERT is disabled", log)
+
+    @override_settings(DEBUG=True, ANSIBLE_BASE_JWT_VALIDATE_CERT=False)
+    def test_no_tls_warning_jwt_cert_disabled_debug(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()
+
+    @override_settings(DEBUG=False, SOCIAL_AUTH_VERIFY_SSL=False)
+    def test_tls_warning_social_auth_ssl_disabled_production(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        with self.assertLogs(logger="ansible_ai_connect.ai.apps", level="CRITICAL") as log:
+            app_config.ready()
+            self.assertInLog("SOCIAL_AUTH_VERIFY_SSL is disabled", log)
+
+    @override_settings(
+        DEBUG=False, ANSIBLE_BASE_JWT_VALIDATE_CERT=True, SOCIAL_AUTH_VERIFY_SSL=True
+    )
+    def test_no_tls_warning_when_all_enabled(self):
+        app_config = AppConfig.create("ansible_ai_connect.ai")
+        app_config.ready()

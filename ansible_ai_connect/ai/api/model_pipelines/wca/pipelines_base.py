@@ -211,6 +211,13 @@ class WCABaseMetaData(
 
         # Ignore SSL errors with inference_url
         if not self.config.verify_ssl:
+            if not settings.DEBUG:
+                logger.critical(
+                    "SECURITY WARNING: SSL verification is disabled for WCA inference "
+                    "URL '%s' (DEBUG=False). This exposes model inference traffic to "
+                    "man-in-the-middle attacks.",
+                    self.config.inference_url,
+                )
             self.session.mount(
                 self.config.inference_url,
                 AllowBrokenSSLContextHTTPAdapter(),

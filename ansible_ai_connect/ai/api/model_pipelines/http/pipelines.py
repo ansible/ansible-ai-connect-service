@@ -328,9 +328,12 @@ class HttpStreamingChatBotPipeline(
             ssl.SSLError: If SSL context creation fails when verify_ssl=True
         """
         if not verify_ssl:
-            # SECURITY NOTE: This disables SSL verification
-            # should only be used in development/testing
-            # This matches requests.Session.verify=False behavior for consistency
+            if not settings.DEBUG:
+                logger.critical(
+                    "SECURITY WARNING: SSL verification is disabled for aiohttp "
+                    "connector (DEBUG=False). All HTTPS traffic through this "
+                    "connector is vulnerable to man-in-the-middle attacks.",
+                )
             return aiohttp.TCPConnector(ssl=False)
 
         # Get SSL context from centralized SSL manager

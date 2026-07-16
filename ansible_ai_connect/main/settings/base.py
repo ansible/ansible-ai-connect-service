@@ -342,8 +342,8 @@ ANSIBLE_BASE_REST_FILTERS_RESERVED_NAMES = (
 
 ANSIBLE_BASE_JWT_KEY = os.getenv("ANSIBLE_BASE_JWT_KEY")
 ANSIBLE_BASE_JWT_VALIDATE_CERT = (
-    os.getenv("ANSIBLE_BASE_JWT_VALIDATE_CERT", "False").lower() == "true"
-) or False
+    os.getenv("ANSIBLE_BASE_JWT_VALIDATE_CERT", "True").lower() != "false"
+)
 ANSIBLE_BASE_MANAGED_ROLE_REGISTRY = json.loads(
     os.getenv("ANSIBLE_BASE_MANAGED_ROLE_REGISTRY", "{}")
 )
