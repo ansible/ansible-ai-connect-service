@@ -230,7 +230,7 @@ requires-dist = [
     { name = "django-allow-cidr" },
     { name = "django-ansible-base", extras = ["api-documentation", "jwt-consumer", "resource-registry"], specifier = ">=2026.1.26" },
     { name = "django-csp", specifier = "~=3.7" },
-    { name = "django-deprecate-fields", specifier = "~=0.1.1" },
+    { name = "django-deprecate-fields", specifier = "~=0.2.3" },
     { name = "django-extensions", specifier = "~=3.2.1" },
     { name = "django-health-check", specifier = "~=3.17.0" },
     { name = "django-import-export", specifier = "~=3.2.0" },
@@ -958,12 +958,15 @@ wheels = [
 
 [[package]]
 name = "django-deprecate-fields"
-version = "0.1.2"
+version = "0.2.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/57/1e/644b1af429d68b7624e7b3b928208d1517ca636f9d09eba010be3be6132b/django-deprecate-fields-0.1.2.tar.gz", hash = "sha256:ab2edaf4a6a09eefdd94740b05630d89fa58ec54461842e3a51fe129077c3942", size = 7221, upload-time = "2024-01-31T08:33:18.321Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/dc/281214543a8e3ebd67294e6a2765d425481726834bf6fe662013dff56eed/django_deprecate_fields-0.2.3.tar.gz", hash = "sha256:d3898d46abe8f338c870e9ef5040dd2f27f3f205e34f5aa2536427d7ffad8aad", size = 7579, upload-time = "2026-01-20T17:50:34.322Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fe/f7/352dee1616b5653ff09f2b0035f07573accb98954a85c009c08bc7625217/django_deprecate_fields-0.2.3-py3-none-any.whl", hash = "sha256:8510a4bfa23ea7c9d5dddcf7593fa5c8dcc4defcbfad97bf6c4b6deed6abc311", size = 8428, upload-time = "2026-01-20T17:50:33.058Z" },
+]
 
 [[package]]
 name = "django-extensions"
