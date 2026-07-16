@@ -169,11 +169,9 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
             logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base",
             level="CRITICAL",
         ) as log:
-            metadata = WCAOnPremMetaData(config)
+            WCAOnPremMetaData(config)
 
-        self.assertTrue(
-            any("SSL verification is disabled" in msg for msg in log.output)
-        )
+        self.assertTrue(any("SSL verification is disabled" in msg for msg in log.output))
         mock_session.mount.assert_called_once()
 
     @override_settings(DEBUG=True)
@@ -187,7 +185,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
             logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base",
             level="CRITICAL",
         ):
-            metadata = WCAOnPremMetaData(config)
+            WCAOnPremMetaData(config)
 
         mock_session.mount.assert_called_once()
 

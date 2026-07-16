@@ -17,8 +17,7 @@ from unittest import TestCase
 from unittest.mock import Mock, patch
 
 import requests
-from django.test import TestCase as DjangoTestCase
-from django.test import override_settings
+from django.test import SimpleTestCase, override_settings
 
 from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
     HttpConfiguration,
@@ -139,7 +138,7 @@ class TestWCAPipelineSSLManagerIntegration(TestCase):
             self.assertEqual(pipeline.session, mock_session)
 
 
-class TestHttpStreamingPipelineSSLManagerIntegration(DjangoTestCase):
+class TestHttpStreamingPipelineSSLManagerIntegration(SimpleTestCase):
     """Test HTTP streaming pipeline integration with centralized SSL manager"""
 
     def setUp(self):
@@ -174,27 +173,27 @@ class TestHttpStreamingPipelineSSLManagerIntegration(DjangoTestCase):
         self.assertEqual(pipeline.config.verify_ssl, False)
 
     @override_settings(DEBUG=False)
-    def test_aiohttp_connector_ssl_disabled_logs_critical_production(self):
+    @patch("aiohttp.TCPConnector")
+    def test_aiohttp_connector_ssl_disabled_logs_critical_production(self, mock_tcp_connector):
         pipeline = HttpStreamingChatBotPipeline(config=self.config)
         with self.assertLogs(
             logger="ansible_ai_connect.ai.api.model_pipelines.http.pipelines",
             level="CRITICAL",
         ) as log:
-            connector = pipeline._get_aiohttp_connector(verify_ssl=False)
-        self.assertTrue(
-            any("SSL verification is disabled" in msg for msg in log.output)
-        )
-        self.assertIsNotNone(connector)
+            pipeline._get_aiohttp_connector(verify_ssl=False)
+        self.assertTrue(any("SSL verification is disabled" in msg for msg in log.output))
+        mock_tcp_connector.assert_called_once_with(ssl=False)
 
     @override_settings(DEBUG=True)
-    def test_aiohttp_connector_ssl_disabled_no_critical_debug(self):
+    @patch("aiohttp.TCPConnector")
+    def test_aiohttp_connector_ssl_disabled_no_critical_debug(self, mock_tcp_connector):
         pipeline = HttpStreamingChatBotPipeline(config=self.config)
         with self.assertNoLogs(
             logger="ansible_ai_connect.ai.api.model_pipelines.http.pipelines",
             level="CRITICAL",
         ):
-            connector = pipeline._get_aiohttp_connector(verify_ssl=False)
-        self.assertIsNotNone(connector)
+            pipeline._get_aiohttp_connector(verify_ssl=False)
+        mock_tcp_connector.assert_called_once_with(ssl=False)
 
 
 class TestSSLManagerBehavior(TestCase):
