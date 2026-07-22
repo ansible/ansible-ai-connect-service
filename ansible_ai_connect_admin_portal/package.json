@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ansible/ansible-ui-framework": "^2.4.2606",
-    "@babel/core": "^7.16.0",
+    "@babel/core": "^7.29.7",
     "@babel/plugin-proposal-private-property-in-object": "^7.16.0",
     "@patternfly/patternfly": "^5.1",
     "@patternfly/react-core": "^5.1",
@@ -31,7 +31,7 @@
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.0.0",
-    "axios": "^1.13.5",
+    "axios": "^1.18.1",
     "babel-jest": "^29.7.0",
     "babel-loader": "^8.2.3",
     "babel-preset-react-app": "^10.0.1",
@@ -64,7 +64,7 @@
     "prettier": "^3.0.2",
     "react-app-polyfill": "^3.0.0",
     "react-dev-utils": "^12.0.1",
-    "react-router-dom": "^6.28.0",
+    "react-router-dom": "^6.30.4",
     "resolve": "^1.20.0",
     "resolve-url-loader": "^5.0.0",
     "sass-loader": "^12.3.0",
@@ -74,7 +74,7 @@
     "tslib": "^2.6.2",
     "typescript": "^5.1.6",
     "webpack": "^5.64.4",
-    "webpack-dev-server": "^5.2.2",
+    "webpack-dev-server": "^5.2.6",
     "webpack-manifest-plugin": "^4.0.2",
     "webpack-mock-server": "^1.0.18",
     "workbox-webpack-plugin": "^6.4.1"
@@ -177,22 +177,28 @@
     "serialize-javascript": "^7.0.5",
     "http-proxy-agent": "^7.0.0",
     "follow-redirects": ">=1.16.0",
-    "shell-quote": ">=1.8.4",
+    "shell-quote": ">=1.8.5",
     "@svgr/webpack": {
       "@svgr/plugin-svgo": {
-        "svgo": "3.3.3"
+        "svgo": "3.3.4"
       }
     },
     "css-minimizer-webpack-plugin": {
       "cssnano": {
         "cssnano-preset-default": {
           "postcss-svgo": {
-            "svgo": "2.8.1"
+            "svgo": "2.8.3"
           }
         }
       }
     },
-    "fast-uri": ">=3.1.1",
-    "@babel/plugin-transform-modules-systemjs": ">=7.29.4"
+    "fast-uri": ">=3.1.4",
+    "@babel/plugin-transform-modules-systemjs": ">=7.29.4",
+    "brace-expansion": "1.1.16",
+    "form-data": ">=4.0.6",
+    "websocket-driver": ">=0.7.5",
+    "http-proxy-middleware": "2.0.10",
+    "body-parser": ">=1.20.6",
+    "js-yaml": "4.3.0"
   }
 }
