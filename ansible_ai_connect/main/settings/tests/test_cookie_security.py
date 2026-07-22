@@ -215,14 +215,18 @@ class TestEnsureCsrfCookieMiddlewareGateway(TestCase):
         middleware(request)
         self.assertFalse(request.META.get("CSRF_COOKIE_NEEDS_UPDATE"))
 
-    def test_standalone_when_both_sessions_exist(self):
+    def test_gateway_csrf_when_both_sessions_exist(self):
+        """AAP-82827: when both gateway and Django session cookies exist
+        (cookie collision from port 8447), treat as gateway request."""
         request = self.factory.get("/")
         request.COOKIES["gateway_sessionid"] = "gw_session"
         request.COOKIES[settings.SESSION_COOKIE_NAME] = "django_session"
         request.COOKIES["csrftoken"] = "gwCsrfToken1234567890abcdefABCDE"
         middleware = EnsureCsrfCookieMiddleware(get_response=lambda r: HttpResponse())
         middleware(request)
-        self.assertTrue(request.META.get("CSRF_COOKIE_NEEDS_UPDATE"))
+        self.assertEqual(
+            request.COOKIES[settings.CSRF_COOKIE_NAME], "gwCsrfToken1234567890abcdefABCDE"
+        )
 
     def test_falls_back_to_standalone_when_gateway_csrf_cookie_missing(self):
         request = self.factory.get("/")

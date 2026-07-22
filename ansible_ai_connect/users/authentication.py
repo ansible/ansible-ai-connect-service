@@ -3,6 +3,9 @@ from ansible_base.jwt_consumer.common.auth import JWTAuthentication
 
 class LightspeedJWTAuthentication(JWTAuthentication):
 
+    def authenticate_header(self, request):
+        return 'Bearer realm="api"'
+
     def authenticate(self, request):
         userdata = super().authenticate(request)
         if userdata:
