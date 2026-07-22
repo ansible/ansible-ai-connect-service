@@ -12,7 +12,7 @@ ansible-anonymizer==1.5.0
     # via ansible-ai-connect
 ansible-compat==25.12.0
     # via ansible-lint
-ansible-core==2.16.19
+ansible-core==2.21.2
     # via
     #   ansible-ai-connect
     #   ansible-compat
