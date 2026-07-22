@@ -199,6 +199,6 @@
     "websocket-driver": ">=0.7.5",
     "http-proxy-middleware": "2.0.10",
     "body-parser": ">=1.20.6",
-    "js-yaml": "4.3.0"
+    "js-yaml": "5.2.1"
   }
 }
