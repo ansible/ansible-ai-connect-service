@@ -180,14 +180,14 @@
     "shell-quote": ">=1.8.5",
     "@svgr/webpack": {
       "@svgr/plugin-svgo": {
-        "svgo": "3.3.4"
+        "svgo": "4.0.2"
       }
     },
     "css-minimizer-webpack-plugin": {
       "cssnano": {
         "cssnano-preset-default": {
           "postcss-svgo": {
-            "svgo": "2.8.3"
+            "svgo": "4.0.2"
           }
         }
       }
