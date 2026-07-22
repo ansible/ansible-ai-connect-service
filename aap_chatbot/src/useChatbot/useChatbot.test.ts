@@ -89,11 +89,11 @@ describe("readCsrfCookie", () => {
     expect(readCsrfCookie()).toEqual("gw_token");
   });
 
-  it("uses __Host-csrftoken when both gateway and django sessions exist", () => {
+  it("uses csrftoken when both gateway and django sessions exist (AAP-82827)", () => {
     cookieSpy.mockReturnValue(
       "csrftoken=gw_token; __Host-csrftoken=django_token; gateway_sessionid=abc123; __Host-sessionid=xyz789",
     );
-    expect(readCsrfCookie()).toEqual("django_token");
+    expect(readCsrfCookie()).toEqual("gw_token");
   });
 
   it("returns null when neither cookie is present", () => {

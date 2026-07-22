@@ -45,11 +45,12 @@ export const readCookie = (name: string): string | null => {
   return null;
 };
 
-// Mirror the gateway detection logic from EnsureCsrfCookieMiddleware:
-// gateway session cookie present AND Django's own session cookie absent.
+// Detect gateway-proxied requests by the presence of the gateway
+// session cookie.  The previous check also required __Host-sessionid
+// to be absent, but that breaks when both cookies coexist (e.g. the
+// user visited Lightspeed on port 8447 in the same browser — AAP-82827).
 const isGatewayRequest = (): boolean =>
-  readCookie("gateway_sessionid") !== null &&
-  readCookie("__Host-sessionid") === null;
+  readCookie("gateway_sessionid") !== null;
 
 export const readCsrfCookie = (): string | null =>
   isGatewayRequest()
