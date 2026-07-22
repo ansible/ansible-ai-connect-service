@@ -69,12 +69,12 @@ class EnsureCsrfCookieMiddleware:
         self.get_response = get_response
 
     def _is_gateway_request(self, request):
-        """Detect gateway-proxied requests: gateway session cookie is
-        present but Django's own session cookie is not."""
-        return (
-            settings.GATEWAY_SESSION_COOKIE_NAME in request.COOKIES
-            and settings.SESSION_COOKIE_NAME not in request.COOKIES
-        )
+        """Detect gateway-proxied requests by the presence of the
+        gateway session cookie.  The previous check also required
+        Django's own session cookie to be absent, but that breaks
+        when both cookies coexist (e.g. the user visited Lightspeed
+        on port 8447 in the same browser — AAP-82827)."""
+        return settings.GATEWAY_SESSION_COOKIE_NAME in request.COOKIES
 
     def _ensure_csrf_cookie(self, request):
         """Ensure the CSRF secret is available in request.META and

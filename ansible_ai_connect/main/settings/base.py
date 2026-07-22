@@ -300,10 +300,10 @@ REST_FRAMEWORK = {
     },
     "PAGE_SIZE": 10,
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "ansible_ai_connect.users.authentication.LightspeedJWTAuthentication",
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         "rest_framework.authentication.SessionAuthentication",
         "ansible_ai_connect.users.auth.RHSSOAuthentication",
-        "ansible_ai_connect.users.authentication.LightspeedJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",

@@ -4,7 +4,7 @@ import string
 import uuid
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import jwt
 from cryptography.hazmat.backends import default_backend
@@ -206,3 +206,36 @@ class TestJWTAuthentication(APIVersionTestCaseBase, APITransactionTestCase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertDictEqual(response.data, expected_response)
+
+    def test_mcp_headers_empty_without_token(self):
+        """get_mcp_headers returns empty dict when no X-DAB-JW-TOKEN is present."""
+        from ansible_ai_connect.ai.api.views import Chat
+
+        mock_request = MagicMock()
+        mock_request.headers = {}
+        mock_request.user.is_authenticated = True
+
+        mock_config = MagicMock()
+        mock_config.mcp_servers = [
+            {"name": "mcp::aap-controller", "type": "controller"},
+        ]
+
+        mcp_headers = Chat.get_mcp_headers(mock_request, mock_config)
+        self.assertEqual(mcp_headers, {})
+
+    def test_jwt_auth_sets_aap_user_with_active_session(self):
+        """Regression test for AAP-82827: When both a session cookie and JWT
+        token are present, JWT auth should resolve first and set aap_user=True."""
+        self.jwt_client.get(self.api_version_reverse("me"))
+        user = User.objects.get(username=self.username)
+        self.assertTrue(user.aap_user)
+
+        user.aap_user = False
+        user.save()
+
+        client = self.client_class(headers={"X-DAB-JW-TOKEN": self.encrypted_token})
+        client.force_login(user)
+
+        response = client.get(self.api_version_reverse("me"))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTrue(response.wsgi_request.user.aap_user)
