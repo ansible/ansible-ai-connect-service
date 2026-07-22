@@ -10,7 +10,7 @@ dependencies = [
   'aiohttp~=3.14.1',
   'ansible-core~=2.16.19',
   'ansible-anonymizer~=1.5.0',
-  'ansible-lint~=25.5.0',
+  'ansible-lint~=25.12.2',
   'boto3~=1.40',
   'cbor2~=5.9.0',
   'cython',
