@@ -231,6 +231,16 @@ class ChatbotForbiddenException(WisdomAccessDenied):
     default_detail = "Forbidden"
 
 
+class ChatbotOAuth2RequiredException(WisdomAccessDenied):
+    default_code = "error__chatbot_oauth2_required"
+    default_detail = "OAuth2 authentication required for MCP tool access"
+
+    @property
+    def login_url(self):
+        base_url = getattr(settings, "LIGHTSPEED_URL", "") or ""
+        return f"{base_url}/login/aap/"
+
+
 class ChatbotPromptTooLongException(BaseWisdomAPIException):
     status_code = 413
     default_code = "error__chatbot_prompt_too_long"

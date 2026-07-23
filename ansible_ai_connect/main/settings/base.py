@@ -177,12 +177,16 @@ def is_ssl_enabled(value: str) -> bool:
 
 
 AAP_API_URL = os.environ.get("AAP_API_URL")
+LIGHTSPEED_URL = os.environ.get("LIGHTSPEED_URL", "")
+AAP_UI_URL = os.environ.get("AAP_UI_URL", "")
 AAP_API_PROVIDER_NAME = os.environ.get("AAP_API_PROVIDER_NAME", "Ansible Automation Platform")
 SOCIAL_AUTH_VERIFY_SSL = is_ssl_enabled(os.getenv("SOCIAL_AUTH_VERIFY_SSL", "True"))
 SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
 SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
 SOCIAL_AUTH_AAP_SCOPE = ["read"]
-SOCIAL_AUTH_AAP_EXTRA_DATA = ["login"]
+SOCIAL_AUTH_AAP_EXTRA_DATA = ["login", "refresh_token"]
+_aap_ui_host = urlparse(AAP_UI_URL).netloc if AAP_UI_URL else ""
+SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = [_aap_ui_host] if _aap_ui_host else []
 
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get("SOCIAL_AUTH_OIDC_OIDC_ENDPOINT")
 SOCIAL_AUTH_OIDC_KEY = os.environ.get("SOCIAL_AUTH_OIDC_KEY")
@@ -223,6 +227,7 @@ SOCIAL_AUTH_PIPELINE = (
     "social_core.pipeline.social_auth.auth_allowed",
     "ansible_ai_connect.users.pipeline.github_get_username",
     # 'social_core.pipeline.user.get_username',
+    "ansible_ai_connect.users.pipeline.aap_associate_existing_user",
     "social_core.pipeline.user.create_user",
     "ansible_ai_connect.users.pipeline.redhat_organization",
     "social_core.pipeline.social_auth.associate_user",
@@ -365,7 +370,11 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "INFO"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "level": os.getenv("DJANGO_LOG_LEVEL") or "INFO",
+        },
     },
     "loggers": {
         "django": {

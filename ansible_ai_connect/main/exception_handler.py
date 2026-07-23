@@ -48,6 +48,8 @@ def exception_handler_with_error_type(exc, context):
 
         # Build complete response
         _data = response.data if response.data else {}
+        _login_url = {"login_url": exc.login_url} if hasattr(exc, "login_url") else {}
+
         response.data = {
             "code": _full_details["code"] if "code" in _full_details else exc.default_code,
             "message": (
@@ -55,6 +57,7 @@ def exception_handler_with_error_type(exc, context):
             ),
             "detail": _data,
             **_model_id,
+            **_login_url,
         }
 
     return response

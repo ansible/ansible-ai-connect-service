@@ -75,6 +75,18 @@ const isTimeoutError = (e: any) => e.name === "AbortError";
 const isTooManyRequestsError = (e: any) =>
   e instanceof Response && e.status === 429;
 
+const getOAuth2LoginUrl = (responseData: any): string | null => {
+  if (
+    responseData?.code === "error__chatbot_oauth2_required" &&
+    responseData?.login_url
+  ) {
+    const loginUrl = new URL(responseData.login_url, window.location.origin);
+    loginUrl.searchParams.set("next", window.location.href);
+    return loginUrl.toString();
+  }
+  return null;
+};
+
 const INFERENCE_MESSAGE_PROMPT = "\n\n`inference>`";
 const INFERENCE_MESSAGE_PROMPT_REGEX = new RegExp(
   INFERENCE_MESSAGE_PROMPT,
@@ -172,6 +184,7 @@ export const useChatbot = () => {
   const [conversationId, setConversationId] = useState<
     string | null | undefined
   >(undefined);
+  const [pendingOAuth2Url, setPendingOAuth2Url] = useState<string | null>(null);
 
   // Workaround for the lag issue of the conversation_id state value.
   const getConversationId = () => {
@@ -549,6 +562,22 @@ export const useChatbot = () => {
             async onopen(resp: any) {
               if (resp.status === 429) {
                 await show429Message();
+              } else if (resp.status === 403) {
+                try {
+                  const errorData = await resp.json();
+                  const loginUrl = getOAuth2LoginUrl(errorData);
+                  if (loginUrl) {
+                    setPendingOAuth2Url(loginUrl);
+                    return;
+                  }
+                } catch {
+                  // Fall through to generic error handling
+                }
+                setAlertMessage({
+                  title: "Error",
+                  message: `Bot returned status_code ${resp.status}`,
+                  variant: "danger",
+                });
               } else if (resp.status >= 400 && resp.status < 500) {
                 setAlertMessage({
                   title: "Error",
@@ -675,6 +704,18 @@ export const useChatbot = () => {
             if (resp.status === 429) {
               throw resp;
             }
+            if (resp.status === 403) {
+              try {
+                const errorData = await resp.json();
+                const loginUrl = getOAuth2LoginUrl(errorData);
+                if (loginUrl) {
+                  setPendingOAuth2Url(loginUrl);
+                  return;
+                }
+              } catch {
+                // Fall through to generic error handling
+              }
+            }
             setAlertMessage({
               title: "Error",
               message: `Bot returned status_code ${resp.status}`,
@@ -737,5 +778,7 @@ export const useChatbot = () => {
     isStreamingSupported,
     bypassTools,
     setBypassTools,
+    pendingOAuth2Url,
+    setPendingOAuth2Url,
   };
 };
