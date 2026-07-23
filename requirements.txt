@@ -32,7 +32,7 @@ asgiref==3.11.0
     #   daphne
     #   django
     #   django-ansible-base
-asttokens==3.0.1
+asttokens==3.0.2
     # via stack-data
 attrs==25.4.0
     # via
