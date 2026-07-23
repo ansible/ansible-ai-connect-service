@@ -177,11 +177,13 @@ def is_ssl_enabled(value: str) -> bool:
 
 
 AAP_API_URL = os.environ.get("AAP_API_URL")
+LIGHTSPEED_URL = os.environ.get("LIGHTSPEED_URL", "")
 AAP_API_PROVIDER_NAME = os.environ.get("AAP_API_PROVIDER_NAME", "Ansible Automation Platform")
 SOCIAL_AUTH_VERIFY_SSL = is_ssl_enabled(os.getenv("SOCIAL_AUTH_VERIFY_SSL", "True"))
 SOCIAL_AUTH_AAP_KEY = os.environ.get("SOCIAL_AUTH_AAP_KEY")
 SOCIAL_AUTH_AAP_SECRET = os.environ.get("SOCIAL_AUTH_AAP_SECRET")
 SOCIAL_AUTH_AAP_SCOPE = ["read"]
+SOCIAL_AUTH_AAP_MCP_SCOPE = os.environ.get("SOCIAL_AUTH_AAP_MCP_SCOPE", "write")
 SOCIAL_AUTH_AAP_EXTRA_DATA = ["login"]
 
 SOCIAL_AUTH_OIDC_OIDC_ENDPOINT = os.environ.get("SOCIAL_AUTH_OIDC_OIDC_ENDPOINT")
@@ -365,7 +367,11 @@ LOGGING = {
         },
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "simple", "level": "INFO"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "level": os.getenv("DJANGO_LOG_LEVEL") or "INFO",
+        },
     },
     "loggers": {
         "django": {

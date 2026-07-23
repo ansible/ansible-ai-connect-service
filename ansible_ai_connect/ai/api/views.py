@@ -17,6 +17,7 @@ import logging
 import time
 import traceback
 from string import Template
+from urllib.parse import parse_qs, urlparse
 
 from ansible_anonymizer import anonymizer
 from ansible_base.lib.utils.schema import extend_schema_if_available
@@ -34,6 +35,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import requests as http_requests
 
 from ansible_ai_connect.ai.api.aws.exceptions import WcaSecretManagerError
 from ansible_ai_connect.ai.api.exceptions import (
@@ -184,6 +186,7 @@ PERMISSIONS_MAP = {
 _CONVERSATION_OWNER_CACHE_TIMEOUT = 24 * 60 * 60
 
 
+
 def _claim_or_verify_conversation_ownership(conversation_id: str, user_uuid) -> bool:
     """
     Register a conversation as owned by user_uuid if it is not yet tracked, or verify
@@ -289,12 +292,139 @@ class AACSAPIView(APIView):
         return None
 
     @staticmethod
+    def _cache_token_response(token_data, user_id):
+        """Cache access_token and refresh_token from a Gateway token response.
+
+        Returns the access_token, or None if the response lacks one.
+        """
+        access_token = token_data.get("access_token")
+        if not access_token:
+            logger.warning("No access_token in Gateway token response")
+            return None
+
+        expires_in = max(token_data.get("expires_in", 3600) - 600, 60)
+        cache.set(f"mcp_gateway_token_{user_id}", access_token, timeout=expires_in)
+
+        new_refresh = token_data.get("refresh_token")
+        if new_refresh:
+            cache.set(
+                f"mcp_gateway_refresh_{user_id}", new_refresh, timeout=24 * 60 * 60
+            )
+
+        return access_token
+
+    @staticmethod
+    def _refresh_gateway_token(user_id, gateway_url, client_id, client_secret, ssl_verify):
+        """Try to obtain an access_token using a cached refresh_token.
+
+        Returns the access_token on success, or None.
+        """
+        refresh_token = cache.get(f"mcp_gateway_refresh_{user_id}")
+        if not refresh_token:
+            return None
+
+        response = http_requests.post(
+            f"{gateway_url}/o/token/",
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": client_id,
+                "client_secret": client_secret,
+            },
+            verify=ssl_verify,
+        )
+        if not response.ok:
+            logger.warning(
+                "Gateway refresh token exchange failed: %s %s",
+                response.status_code,
+                response.text,
+            )
+            cache.delete(f"mcp_gateway_refresh_{user_id}")
+            return None
+
+        return AACSAPIView._cache_token_response(response.json(), user_id)
+
+    @staticmethod
     def get_mcp_headers(request: Request, config: HttpConfiguration) -> dict:
         mcp_headers = {}
         jwt_header_name = "X-DAB-JW-TOKEN"
+        auth_header_name = "X-Authorization"
         token = request.headers.get(jwt_header_name, None)
         user = request.user
-        if token and user.is_authenticated and user.aap_user:
+        if token and user.is_authenticated and user.aap_user and config.mcp_servers:
+            client_id = settings.SOCIAL_AUTH_AAP_KEY
+            client_secret = settings.SOCIAL_AUTH_AAP_SECRET
+            csrf_token = request.headers.get("X-CSRFToken", None)
+            cookie = request.headers.get("Cookie", None)
+            ssl_verify = settings.SOCIAL_AUTH_VERIFY_SSL
+            cache_key = f"mcp_gateway_token_{user.id}"
+            access_token = cache.get(cache_key)
+            gateway_url = settings.AAP_API_URL
+            redirect_uri = f"{settings.LIGHTSPEED_URL}/complete/aap/"
+            if not access_token:
+                access_token = AACSAPIView._refresh_gateway_token(
+                    user.id, gateway_url, client_id, client_secret, ssl_verify
+                )
+            if not access_token:
+                try:
+                    response = http_requests.post(
+                        f"{gateway_url}/o/authorize/",
+                        data={
+                            "response_type": "code",
+                            "client_id": client_id,
+                            "redirect_uri": redirect_uri,
+                            "scope": settings.SOCIAL_AUTH_AAP_MCP_SCOPE,
+                            "allow": "Authorize",
+                        },
+                        headers={
+                            "X-CSRFToken": csrf_token,
+                            "Cookie": cookie,
+                            "Referer": f"{gateway_url}/",
+                        },
+                        allow_redirects=False,
+                        verify=ssl_verify,
+                    )
+
+                    redirect_url = response.headers.get("Location")
+                    if not redirect_url:
+                        logger.warning(
+                            "Gateway authorize did not redirect: %s", response.status_code
+                        )
+                        return mcp_headers
+
+                    codes = parse_qs(urlparse(redirect_url).query).get("code", [])
+                    if not codes:
+                        logger.warning("No authorization code in Gateway redirect URL")
+                        return mcp_headers
+
+                    response = http_requests.post(
+                        f"{gateway_url}/o/token/",
+                        data={
+                            "grant_type": "authorization_code",
+                            "code": codes[0],
+                            "redirect_uri": redirect_uri,
+                            "client_id": client_id,
+                            "client_secret": client_secret,
+                        },
+                        verify=ssl_verify,
+                    )
+                    if not response.ok:
+                        logger.warning(
+                            "Gateway token exchange failed: %s %s",
+                            response.status_code,
+                            response.text,
+                        )
+                        return mcp_headers
+
+                    access_token = AACSAPIView._cache_token_response(
+                        response.json(), user.id
+                    )
+                    if not access_token:
+                        return mcp_headers
+                except Exception:
+                    logger.exception("MCP Gateway token exchange failed")
+                    return mcp_headers
+
             for mcp_server in config.mcp_servers:
                 if mcp_server["type"] in ["controller", "eda", "hub", "lightspeed"]:
                     logger.debug(
@@ -302,14 +432,15 @@ class AACSAPIView(APIView):
                         f"server_name: {mcp_server['name']}, header_name: {jwt_header_name}"
                     )
                     mcp_headers[mcp_server["name"]] = {jwt_header_name: token}
-                # This functionality seems experimental for gateway and does not allow the user to
-                # access wide range of api endpoints, we need to find a solution for gateway,
-                # but for the moment comment this code.
-                # elif mcp_server["type"] == "gateway":
-                #     from ansible_base.resource_registry.resource_server import get_service_token
-                #     user_ansible_id = str(user.ansible_id_for_filter)
-                #     token = get_service_token(user_id=user_ansible_id, expiration=3600)
-                #     mcp_headers[mcp_server["name"]] = {"X-ANSIBLE-SERVICE-AUTH": token}
+                elif mcp_server["type"] == "mcp-server":
+                    if access_token:
+                        logger.debug(
+                            f"Setting MCP header - server_type: {mcp_server['type']}, "
+                            f"server_name: {mcp_server['name']}, header_name: {auth_header_name}"
+                        )
+                        mcp_headers[mcp_server["name"]] = {
+                            auth_header_name: f"Bearer {access_token}"
+                        }
 
         return mcp_headers
 
