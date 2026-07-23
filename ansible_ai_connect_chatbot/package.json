@@ -49,8 +49,8 @@
     "@eslint/compat": "^1.2.1",
     "@eslint/js": "^9.13.0",
     "@testing-library/react": "^16.2.0",
-    "@vitest/browser": "^3.2.7",
-    "@vitest/coverage-v8": "^3.2.7",
+    "@vitest/browser": "^4.0.0",
+    "@vitest/coverage-v8": "^4.0.0",
     "buffer": "^6.0.3",
     "empty-module": "^0.0.2",
     "eslint": "^9.13.0",
@@ -67,7 +67,7 @@
     "sass-embedded": "^1.79.1",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.24.0",
-    "vitest": "^3.2.7",
+    "vitest": "^4.0.0",
     "vitest-browser-react": "^0.0.4"
   }
 }
