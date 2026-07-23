@@ -7,7 +7,7 @@
     "@patternfly/chatbot": "^6.5.0",
     "@patternfly/react-core": "^6.0.0",
     "@patternfly/react-icons": "^6.0.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^24.0.0",
     "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
