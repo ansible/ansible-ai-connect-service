@@ -29,9 +29,17 @@ import { MarkdownLinkBuffer } from "../utils/MarkdownLinkBuffer";
 const userName = document.getElementById("user_name")?.innerText ?? "User";
 const botName = getProductName();
 
-export const modelsSupported: LLMModel[] = [
+export const DEFAULT_MODELS: LLMModel[] = [
   { model: "granite-3.3-8b-instruct", provider: "rhoai" },
 ];
+
+export const DEFAULT_API_BASE_PATH = "/api/lightspeed/v1";
+
+export interface UseChatbotConfig {
+  apiBasePath?: string;
+  models?: LLMModel[];
+  includeQueryInFeedbackUrl?: boolean;
+}
 
 export const readCookie = (name: string): string | null => {
   const nameEQ = name + "=";
@@ -99,6 +107,7 @@ export const fixedMessage = (content: string): MessageProps => ({
 export const feedbackMessage = (
   f: ChatFeedback,
   conversation_id: string,
+  includeQueryInFeedbackUrl = true,
 ): MessageProps => ({
   role: "bot",
   content:
@@ -119,7 +128,14 @@ export const feedbackMessage = (
             id: "response",
             onClick: () =>
               window
-                .open(createGitHubIssueURL(f, conversation_id), "_blank")
+                .open(
+                  createGitHubIssueURL(
+                    f,
+                    conversation_id,
+                    includeQueryInFeedbackUrl,
+                  ),
+                  "_blank",
+                )
                 ?.focus(),
           },
         ],
@@ -134,6 +150,7 @@ const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 const createGitHubIssueURL = (
   f: ChatFeedback,
   conversation_id: string,
+  includeQuery = true,
 ): string => {
   const searchParams: URLSearchParams = new URLSearchParams();
   searchParams.append("assignees", "korenaren");
@@ -141,8 +158,10 @@ const createGitHubIssueURL = (
   searchParams.append("projects", "");
   searchParams.append("template", "chatbot_feedback.yml");
   searchParams.append("conversation_id", conversation_id);
-  searchParams.append("prompt", f.query);
-  searchParams.append("response", f.response.response);
+  if (includeQuery) {
+    searchParams.append("prompt", f.query);
+    searchParams.append("response", f.response.response);
+  }
   // Referenced documents may increase as more source documents being ingested,
   // so let's be try not to generate long length for query parameter "ref_docs",
   // otherwise GH returns 414 URI Too Long error page. Assuming max of 30 docs.
@@ -163,7 +182,11 @@ const createGitHubIssueURL = (
 // For fixing tooltips that pops up from an iframe
 export let bodyElement = document.body;
 
-export const useChatbot = () => {
+export const useChatbot = (config?: UseChatbotConfig) => {
+  const apiBasePath = config?.apiBasePath ?? DEFAULT_API_BASE_PATH;
+  const models = config?.models ?? DEFAULT_MODELS;
+  const includeQueryInFeedbackUrl = config?.includeQueryInFeedbackUrl ?? true;
+
   const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [alertMessage, setAlertMessage] = useState<AlertMessage | undefined>(
@@ -186,7 +209,7 @@ export const useChatbot = () => {
     return id;
   };
 
-  const [selectedModel, setSelectedModel] = useState("granite-3.3-8b-instruct");
+  const [selectedModel, setSelectedModel] = useState(models[0].model);
   const [hasStopButton, setHasStopButton] = useState<boolean>(false);
   const [abortController, setAbortController] = useState(new AbortController());
   const [bypassTools, setBypassTools] = useState<boolean>(false);
@@ -203,7 +226,7 @@ export const useChatbot = () => {
     const checkStatus = async () => {
       const csrfToken = readCsrfCookie();
       try {
-        const resp = await fetch("/api/lightspeed/v1/health/status/chatbot/", {
+        const resp = await fetch(`${apiBasePath}/health/status/chatbot/`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -225,7 +248,7 @@ export const useChatbot = () => {
       }
     };
     checkStatus();
-  }, []);
+  }, [apiBasePath]);
 
   const isStreamingSupported = () => {
     // For making streaming mode debug easier.
@@ -442,7 +465,7 @@ export const useChatbot = () => {
       const csrfToken = readCsrfCookie();
       const resp = await fetch(
         import.meta.env.PROD
-          ? "/api/lightspeed/v1/ai/feedback/"
+          ? `${apiBasePath}/ai/feedback/`
           : "http://localhost:8080/v1/feedback/",
         {
           method: "POST",
@@ -458,7 +481,11 @@ export const useChatbot = () => {
       if (resp.ok) {
         const newBotMessage = {
           referenced_documents: [],
-          ...feedbackMessage(feedbackRequest, getConversationId()),
+          ...feedbackMessage(
+            feedbackRequest,
+            getConversationId(),
+            includeQueryInFeedbackUrl,
+          ),
         };
         addMessage(newBotMessage, feedbackRequest.message);
       } else {
@@ -517,7 +544,7 @@ export const useChatbot = () => {
     }
 
     if (inDebugMode()) {
-      for (const m of modelsSupported) {
+      for (const m of models) {
         if (selectedModel === m.model) {
           chatRequest.model = m.model;
           chatRequest.provider = m.provider;
@@ -535,7 +562,7 @@ export const useChatbot = () => {
         chatRequest.media_type = "application/json";
         await fetchEventSource(
           import.meta.env.PROD
-            ? "/api/lightspeed/v1/ai/streaming_chat/"
+            ? `${apiBasePath}/ai/streaming_chat/`
             : "http://localhost:8080/v1/streaming_query",
           {
             openWhenHidden: true,
@@ -656,7 +683,7 @@ export const useChatbot = () => {
         try {
           const resp = await fetch(
             import.meta.env.PROD
-              ? "/api/lightspeed/v1/ai/chat/"
+              ? `${apiBasePath}/ai/chat/`
               : "http://localhost:8080/v1/query/",
             {
               method: "POST",
@@ -737,5 +764,6 @@ export const useChatbot = () => {
     isStreamingSupported,
     bypassTools,
     setBypassTools,
+    models,
   };
 };

@@ -1,8 +1,5 @@
 import type { AlertMessage } from "./types/Message";
 
-/* AAP UI flag */
-export const AAP_UI = true;
-
 /* Slightly lower than CloudFront's timeout which is 30s. */
 export const API_TIMEOUT = 28000;
 

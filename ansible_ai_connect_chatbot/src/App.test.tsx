@@ -7,17 +7,18 @@ import React from "react";
 // NOTE: ignoring because we non-use of "screen" is conistent with the
 // vitest-browser-react documentation
 /* eslint-disable testing-library/prefer-screen-queries */
-/* eslint-disable no-nested-ternary */
 import { assert, beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { MemoryRouter } from "react-router-dom";
 import { screen, waitFor } from "@testing-library/react";
 import { App } from "./App";
-import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
+import {
+  ColorThemeSwitch,
+  conversationStore,
+} from "@ansible/ansible-ai-connect-chatbot";
 import { userEvent, page } from "@vitest/browser/context";
 // See: https://github.com/vitest-dev/vitest/issues/6965
 import "@vitest/browser/matchers.d.ts";
-import { conversationStore } from "./AnsibleChatbot/AnsibleChatbot";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -139,6 +140,42 @@ function mockFetch(
       }
     }
 
+    // Handle streaming POST requests
+    if (
+      stream &&
+      options?.method === "POST" &&
+      typeof url === "string" &&
+      url.includes("/streaming_chat/")
+    ) {
+      const body = JSON.parse(options.body as string);
+      const query: string = body.query;
+
+      let streamStatus = 200;
+      let streamEvents: object[] = streamNormalData;
+      let hang = false;
+
+      if (query.startsWith("status=")) {
+        streamStatus = parseInt(query.substring(7));
+        streamEvents = [];
+      } else if (query.startsWith("error in stream")) {
+        streamEvents = streamErrorData;
+      } else if (query.startsWith("agent_greeting")) {
+        streamEvents = streamAgentGreetingData;
+      } else if (query.startsWith("agent")) {
+        streamEvents = streamAgentNormalData;
+      } else if (query.startsWith("skip close")) {
+        hang = true;
+      }
+
+      const sseBody = createSSEStream(streamEvents, hang);
+      return Promise.resolve(
+        new Response(sseBody, {
+          status: streamStatus,
+          headers: { "Content-Type": "text/event-stream" },
+        }),
+      );
+    }
+
     // Handle POST requests for chat and feedback
     if (options?.method === "POST") {
       if (reject) {
@@ -176,191 +213,163 @@ function mockFetch(
   return global.fetch;
 }
 
-function mockFetchEventSource() {
-  const streamNormalData: object[] = [
-    {
-      event: "start",
-      data: { conversation_id: "1ec5ba5b-c12d-465b-a722-0b95fee55e8c" },
+const streamNormalData: object[] = [
+  {
+    event: "start",
+    data: { conversation_id: "1ec5ba5b-c12d-465b-a722-0b95fee55e8c" },
+  },
+  { event: "token", data: { id: 0, token: "" } },
+  { event: "token", data: { id: 1, token: "The" } },
+  { event: "token", data: { id: 2, token: " Full" } },
+  { event: "token", data: { id: 3, token: " Support" } },
+  { event: "token", data: { id: 4, token: " Phase" } },
+  { event: "token", data: { id: 5, token: " for" } },
+  { event: "token", data: { id: 6, token: " A" } },
+  { event: "token", data: { id: 7, token: "AP" } },
+  { event: "token", data: { id: 8, token: " " } },
+  { event: "token", data: { id: 9, token: "2" } },
+  { event: "token", data: { id: 10, token: "." } },
+  { event: "token", data: { id: 11, token: "4" } },
+  { event: "token", data: { id: 12, token: " ends" } },
+  { event: "token", data: { id: 13, token: " on" } },
+  { event: "token", data: { id: 14, token: " October" } },
+  { event: "token", data: { id: 15, token: " " } },
+  { event: "token", data: { id: 16, token: "1" } },
+  { event: "token", data: { id: 17, token: "," } },
+  { event: "token", data: { id: 18, token: " " } },
+  { event: "token", data: { id: 19, token: "2" } },
+  { event: "token", data: { id: 20, token: "0" } },
+  { event: "token", data: { id: 21, token: "2" } },
+  { event: "token", data: { id: 22, token: "4" } },
+  { event: "token", data: { id: 23, token: "." } },
+  { event: "token", data: { id: 24, token: "" } },
+  {
+    event: "end",
+    data: {
+      referenced_documents: [
+        {
+          doc_title: "AAP Lifecycle Dates",
+          doc_url:
+            "https://github.com/ansible/aap-rag-content/blob/main/additional_docs/additional_content.txt",
+        },
+        {
+          doc_title: "Ansible Components Versions",
+          doc_url:
+            "https://github.com/ansible/aap-rag-content/blob/main/additional_docs/components_versions.txt",
+        },
+      ],
+      truncated: false,
+      input_tokens: 819,
+      output_tokens: 20,
     },
-    { event: "token", data: { id: 0, token: "" } },
-    { event: "token", data: { id: 1, token: "The" } },
-    { event: "token", data: { id: 2, token: " Full" } },
-    { event: "token", data: { id: 3, token: " Support" } },
-    { event: "token", data: { id: 4, token: " Phase" } },
-    { event: "token", data: { id: 5, token: " for" } },
-    { event: "token", data: { id: 6, token: " A" } },
-    { event: "token", data: { id: 7, token: "AP" } },
-    { event: "token", data: { id: 8, token: " " } },
-    { event: "token", data: { id: 9, token: "2" } },
-    { event: "token", data: { id: 10, token: "." } },
-    { event: "token", data: { id: 11, token: "4" } },
-    { event: "token", data: { id: 12, token: " ends" } },
-    { event: "token", data: { id: 13, token: " on" } },
-    { event: "token", data: { id: 14, token: " October" } },
-    { event: "token", data: { id: 15, token: " " } },
-    { event: "token", data: { id: 16, token: "1" } },
-    { event: "token", data: { id: 17, token: "," } },
-    { event: "token", data: { id: 18, token: " " } },
-    { event: "token", data: { id: 19, token: "2" } },
-    { event: "token", data: { id: 20, token: "0" } },
-    { event: "token", data: { id: 21, token: "2" } },
-    { event: "token", data: { id: 22, token: "4" } },
-    { event: "token", data: { id: 23, token: "." } },
-    { event: "token", data: { id: 24, token: "" } },
-    {
-      event: "end",
-      data: {
-        referenced_documents: [
-          {
-            doc_title: "AAP Lifecycle Dates",
-            doc_url:
-              "https://github.com/ansible/aap-rag-content/blob/main/additional_docs/additional_content.txt",
-          },
-          {
-            doc_title: "Ansible Components Versions",
-            doc_url:
-              "https://github.com/ansible/aap-rag-content/blob/main/additional_docs/components_versions.txt",
-          },
-        ],
-        truncated: false,
-        input_tokens: 819,
-        output_tokens: 20,
-      },
-    },
-  ];
+  },
+];
 
-  const streamErrorData: object[] = [
-    {
-      event: "start",
-      data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb3" },
+const streamErrorData: object[] = [
+  {
+    event: "start",
+    data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb3" },
+  },
+  {
+    event: "error",
+    data: {
+      response: "Oops, something went wrong during LLM invocation",
+      cause: "Error code: 404 - {'detail': 'Not Found'}",
     },
-    {
-      event: "error",
-      data: {
-        response: "Oops, something went wrong during LLM invocation",
-        cause: "Error code: 404 - {'detail': 'Not Found'}",
-      },
-    },
-  ];
+  },
+];
 
-  const streamAgentNormalData: object[] = [
-    {
-      event: "start",
-      data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb4" },
-    },
-    {
-      event: "token",
-      data: { id: 0, token: "\n\n`inference>`Let me search for " },
-    },
-    {
-      event: "token",
-      data: { id: 1, token: "information about EDA." },
-    },
-    {
-      event: "tool_call",
-      data: { id: 2, token: '{ "key":"value"}' },
-    },
-    {
-      event: "step_details",
-      data: { id: 3, token: '{ "key":"value"}' },
-    },
-    {
-      event: "token",
-      data: { id: 5, token: "Some output" },
-    },
-    {
-      event: "token",
-      data: { id: 6, token: "\n\n`inference>`EDA stands for " },
-    },
-    {
-      event: "token",
-      data: { id: 7, token: "Event Driven Ansible." },
-    },
-    {
-      event: "step_complete",
-      data: { id: 8, token: '{ "key":"value"}' },
-    },
-    {
-      event: "turn_complete",
-      data: { id: 0, token: "Turn complete." },
-    },
-  ];
+const streamAgentNormalData: object[] = [
+  {
+    event: "start",
+    data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb4" },
+  },
+  {
+    event: "token",
+    data: { id: 0, token: "\n\n`inference>`Let me search for " },
+  },
+  {
+    event: "token",
+    data: { id: 1, token: "information about EDA." },
+  },
+  {
+    event: "tool_call",
+    data: { id: 2, token: '{ "key":"value"}' },
+  },
+  {
+    event: "step_details",
+    data: { id: 3, token: '{ "key":"value"}' },
+  },
+  {
+    event: "token",
+    data: { id: 5, token: "Some output" },
+  },
+  {
+    event: "token",
+    data: { id: 6, token: "\n\n`inference>`EDA stands for " },
+  },
+  {
+    event: "token",
+    data: { id: 7, token: "Event Driven Ansible." },
+  },
+  {
+    event: "step_complete",
+    data: { id: 8, token: '{ "key":"value"}' },
+  },
+  {
+    event: "turn_complete",
+    data: { id: 0, token: "Turn complete." },
+  },
+];
 
-  const streamAgentGreetingData: object[] = [
-    {
-      event: "start",
-      data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb4" },
+const streamAgentGreetingData: object[] = [
+  {
+    event: "start",
+    data: { conversation_id: "6e33a46e-2b15-4128-8e5c-c6f637ebfbb4" },
+  },
+  {
+    event: "token",
+    data: {
+      id: 0,
+      token: "\n\n`inference>` Hello! How can I assist you with Ansible today?",
     },
-    {
-      event: "token",
-      data: {
-        id: 0,
-        token:
-          "\n\n`inference>` Hello! How can I assist you with Ansible today?",
-      },
-    },
-    {
-      event: "turn_complete",
-      data: { id: 0, token: "Turn complete." },
-    },
-  ];
+  },
+  {
+    event: "turn_complete",
+    data: { id: 0, token: "Turn complete." },
+  },
+];
 
-  return vi.fn(async (_, init) => {
-    let status = 200;
-    let errorCase = false;
-    let agent = false;
-    let agent_greeting = false;
-    let skipClose = false;
-    const o = JSON.parse(init.body);
-    if (o.query.startsWith("status=")) {
-      status = parseInt(o.query.substring(7));
-    } else if (o.query.startsWith("error in stream")) {
-      errorCase = true;
-    } else if (o.query.startsWith("agent_greeting")) {
-      agent_greeting = true;
-    } else if (o.query.startsWith("agent")) {
-      agent = true;
-    } else if (o.query.startsWith("skip close")) {
-      skipClose = true;
-    }
-    console.log(`status ${status}`);
-
-    const ok = status === 200;
-    await init.onopen({ status, ok });
-    if (status === 200) {
-      const streamData = agent_greeting
-        ? streamAgentGreetingData
-        : agent
-          ? streamAgentNormalData
-          : errorCase
-            ? streamErrorData
-            : streamNormalData;
-      for (const data of streamData) {
-        init.onmessage({ data: JSON.stringify(data) });
+function createSSEStream(events: object[], hang = false): ReadableStream {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      for (const e of events as any[]) {
+        const chunk = `event: ${e.event}\ndata: ${JSON.stringify(e.data)}\n\n`;
+        controller.enqueue(encoder.encode(chunk));
       }
-    }
-    if (!skipClose) {
-      init.onclose();
-    }
+      if (!hang) {
+        controller.close();
+      }
+    },
   });
 }
 
 let copiedString = "";
-function mockSetClipboard() {
-  return vi.fn((s: string) => {
-    copiedString = s;
-    console.log(`mockedSetClipboard:${s}`);
-  });
-}
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  vi.mock("@microsoft/fetch-event-source", () => ({
-    fetchEventSource: mockFetchEventSource(),
-  }));
-  vi.mock("./Clipboard", () => ({
-    setClipboard: mockSetClipboard(),
-  }));
+  copiedString = "";
+  Object.defineProperty(navigator, "clipboard", {
+    value: {
+      writeText: vi.fn((s: string) => {
+        copiedString = s;
+        return Promise.resolve();
+      }),
+    },
+    writable: true,
+    configurable: true,
+  });
 });
 
 test("Basic chatbot interaction", async () => {
@@ -875,7 +884,9 @@ test("Chat streaming error in streaming data", async () => {
   await sendMessage("error in stream");
   const alert = view.container.querySelector(".pf-v6-c-alert__description");
   const textContent = alert?.textContent;
-  expect(textContent).toEqual("Error code: 404 - {'detail': 'Not Found'}");
+  expect(textContent).toEqual(
+    `Bot returned an error: response="Oops, something went wrong during LLM invocation", cause="Error code: 404 - {'detail': 'Not Found'}"`,
+  );
 });
 
 test("Chat streaming error in status check", async () => {
