@@ -23,9 +23,6 @@ from ansible_ai_connect.ai.api.model_pipelines.http.configuration import (
 from ansible_ai_connect.ai.api.model_pipelines.llamacpp.configuration import (
     LlamaCppConfiguration,
 )
-from ansible_ai_connect.ai.api.model_pipelines.llamastack.configuration import (
-    LlamaStackConfiguration,
-)
 from ansible_ai_connect.ai.api.model_pipelines.nop.configuration import NopConfiguration
 from ansible_ai_connect.ai.api.model_pipelines.ollama.configuration import (
     OllamaConfiguration,
@@ -91,13 +88,6 @@ def mock_pipeline_config(pipeline_provider: t_model_mesh_api_type, **kwargs):
                 timeout=extract("timeout", 1000, **kwargs),
                 enable_health_check=extract("enable_health_check", False, **kwargs),
                 verify_ssl=extract("verify_ssl", False, **kwargs),
-            )
-        case "llama-stack":
-            return LlamaStackConfiguration(
-                inference_url=extract("inference_url", "http://localhost", **kwargs),
-                model_id=extract("model_id", "a-model-id", **kwargs),
-                timeout=extract("timeout", 1000, **kwargs),
-                enable_health_check=extract("enable_health_check", False, **kwargs),
             )
         case "nop":
             return NopConfiguration()
