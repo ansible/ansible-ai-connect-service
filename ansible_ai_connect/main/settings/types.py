@@ -28,7 +28,6 @@ t_model_mesh_api_type = Literal[
     "ollama",
     "llamacpp",
     "nop",
-    "llama-stack",
 ]
 
 t_deployment_mode = Literal["saas", "upstream", "onprem"]
