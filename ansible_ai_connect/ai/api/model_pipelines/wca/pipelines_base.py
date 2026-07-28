@@ -238,7 +238,9 @@ class WCABaseMetaData(
             # retry on server errors and client errors
             # with 429 status code (rate limited) and 422 status code,
             # don't retry on other client errors
-            return bool(status_code and (400 <= status_code < 500) and status_code not in (422, 429))
+            return bool(
+                status_code and (400 <= status_code < 500) and status_code not in (422, 429)
+            )
         else:
             # retry on all other errors (e.g. network)
             return False

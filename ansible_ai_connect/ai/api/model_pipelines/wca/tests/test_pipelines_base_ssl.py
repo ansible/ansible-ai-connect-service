@@ -27,9 +27,7 @@ from unittest.mock import Mock, patch
 import requests
 from django.test import SimpleTestCase, override_settings
 
-from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
-    WCABaseMetaData,
-)
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import WCABaseMetaData
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremMetaData,
 )
