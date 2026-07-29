@@ -620,7 +620,7 @@ class WCABasePlaybookGenerationPipeline(
             result.raise_for_status()
 
         except (HTTPError, WcaRetryableHttpError) as e:
-            logger.error(f"WCA playbook generation failed due to {e}.")
+            logger.exception(f"WCA playbook generation failed due to {e}.")
             raise WcaGenerationFailure(model_id=model_id)
 
         response = json.loads(result.text)
@@ -716,7 +716,7 @@ class WCABaseRoleGenerationPipeline(
             result.raise_for_status()
 
         except (HTTPError, WcaRetryableHttpError) as e:
-            logger.error(f"WCA role generation failed due to {e}.")
+            logger.exception(f"WCA role generation failed due to {e}.")
             raise WcaGenerationFailure(model_id=model_id)
 
         response = json.loads(result.text)
@@ -812,7 +812,7 @@ class WCABasePlaybookExplanationPipeline(
             result.raise_for_status()
 
         except (HTTPError, WcaRetryableHttpError) as e:
-            logger.error(f"WCA playbook explanation failed due to {e}.")
+            logger.exception(f"WCA playbook explanation failed due to {e}.")
             raise WcaExplanationFailure(model_id=model_id)
 
         response = json.loads(result.text)
@@ -886,7 +886,7 @@ class WCABaseRoleExplanationPipeline(
             result.raise_for_status()
 
         except (HTTPError, WcaRetryableHttpError) as e:
-            logger.error(f"WCA role explanation failed due to {e}.")
+            logger.exception(f"WCA role explanation failed due to {e}.")
             raise WcaExplanationFailure(model_id=model_id)
 
         response = json.loads(result.text)
