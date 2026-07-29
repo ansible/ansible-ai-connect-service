@@ -378,7 +378,7 @@ class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLog
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
         with (
-            self.assertRaises(HTTPError),
+            self.assertRaises(WcaInferenceFailure),
             self.assertLogs(
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
@@ -620,7 +620,7 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
         with (
-            self.assertRaises(HTTPError),
+            self.assertRaises(WcaInferenceFailure),
             self.assertLogs(
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
