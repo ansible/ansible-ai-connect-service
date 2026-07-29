@@ -261,7 +261,7 @@ class WCABaseMetaData(
             #    so that ResponseStatusCode422WCAValidationFailure in wca_utils.py
             #    can handle it as WcaValidationFailure after post_request() returns.
             # 2. Transient failure (e.g. sporadic ARI errors) — any other 422.
-            #    This should bThae retried via backoff.
+            #    This should be retried via backoff.
             try:
                 payload = response.json()
                 if isinstance(payload, dict):
@@ -601,18 +601,25 @@ class WCABasePlaybookGenerationPipeline(
             self._raise_for_retryable_status(result)
             return result
 
-        result = post_request()
+        try:
+            result = post_request()
 
-        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
-        if generation_id and x_request_id:
-            # request/payload suggestion_id is a UUID not a string whereas
-            # HTTP headers are strings.
-            if x_request_id != str(generation_id):
-                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
+            x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+            if generation_id and x_request_id:
+                # request/payload suggestion_id is a UUID not a string whereas
+                # HTTP headers are strings.
+                if x_request_id != str(generation_id):
+                    raise WcaRequestIdCorrelationFailure(
+                        model_id=model_id, x_request_id=x_request_id
+                    )
 
-        context = Context(model_id, result, False)
-        InferenceResponseChecks().run_checks(context)
-        result.raise_for_status()
+            context = Context(model_id, result, False)
+            InferenceResponseChecks().run_checks(context)
+            result.raise_for_status()
+
+        except (HTTPError, WcaRetryableHttpError) as e:
+            logger.error(f"WCA playbook generation failed due to {e}.")
+            raise WcaInferenceFailure(model_id=model_id)
 
         response = json.loads(result.text)
 
@@ -690,18 +697,25 @@ class WCABaseRoleGenerationPipeline(
             self._raise_for_retryable_status(result)
             return result
 
-        result = post_request()
+        try:
+            result = post_request()
 
-        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
-        if generation_id and x_request_id:
-            # request/payload suggestion_id is a UUID not a string whereas
-            # HTTP headers are strings.
-            if x_request_id != str(generation_id):
-                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
+            x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+            if generation_id and x_request_id:
+                # request/payload suggestion_id is a UUID not a string whereas
+                # HTTP headers are strings.
+                if x_request_id != str(generation_id):
+                    raise WcaRequestIdCorrelationFailure(
+                        model_id=model_id, x_request_id=x_request_id
+                    )
 
-        context = Context(model_id, result, False)
-        InferenceResponseChecks().run_checks(context)
-        result.raise_for_status()
+            context = Context(model_id, result, False)
+            InferenceResponseChecks().run_checks(context)
+            result.raise_for_status()
+
+        except (HTTPError, WcaRetryableHttpError) as e:
+            logger.error(f"WCA role generation failed due to {e}.")
+            raise WcaInferenceFailure(model_id=model_id)
 
         response = json.loads(result.text)
 
@@ -779,18 +793,25 @@ class WCABasePlaybookExplanationPipeline(
             self._raise_for_retryable_status(result)
             return result
 
-        result = post_request()
+        try:
+            result = post_request()
 
-        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
-        if explanation_id and x_request_id:
-            # request/payload suggestion_id is a UUID not a string whereas
-            # HTTP headers are strings.
-            if x_request_id != str(explanation_id):
-                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
+            x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+            if explanation_id and x_request_id:
+                # request/payload suggestion_id is a UUID not a string whereas
+                # HTTP headers are strings.
+                if x_request_id != str(explanation_id):
+                    raise WcaRequestIdCorrelationFailure(
+                        model_id=model_id, x_request_id=x_request_id
+                    )
 
-        context = Context(model_id, result, False)
-        InferenceResponseChecks().run_checks(context)
-        result.raise_for_status()
+            context = Context(model_id, result, False)
+            InferenceResponseChecks().run_checks(context)
+            result.raise_for_status()
+
+        except (HTTPError, WcaRetryableHttpError) as e:
+            logger.error(f"WCA playbook explanation failed due to {e}.")
+            raise WcaInferenceFailure(model_id=model_id)
 
         response = json.loads(result.text)
         return response["explanation"]
@@ -846,18 +867,25 @@ class WCABaseRoleExplanationPipeline(
             self._raise_for_retryable_status(result)
             return result
 
-        result = post_request()
+        try:
+            result = post_request()
 
-        x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
-        if explanation_id and x_request_id:
-            # request/payload suggestion_id is a UUID not a string whereas
-            # HTTP headers are strings.
-            if x_request_id != str(explanation_id):
-                raise WcaRequestIdCorrelationFailure(model_id=model_id, x_request_id=x_request_id)
+            x_request_id = result.headers.get(WCA_REQUEST_ID_HEADER)
+            if explanation_id and x_request_id:
+                # request/payload suggestion_id is a UUID not a string whereas
+                # HTTP headers are strings.
+                if x_request_id != str(explanation_id):
+                    raise WcaRequestIdCorrelationFailure(
+                        model_id=model_id, x_request_id=x_request_id
+                    )
 
-        context = Context(model_id, result, False)
-        InferenceResponseChecks().run_checks(context)
-        result.raise_for_status()
+            context = Context(model_id, result, False)
+            InferenceResponseChecks().run_checks(context)
+            result.raise_for_status()
+
+        except (HTTPError, WcaRetryableHttpError) as e:
+            logger.error(f"WCA role explanation failed due to {e}.")
+            raise WcaInferenceFailure(model_id=model_id)
 
         response = json.loads(result.text)
         return response["explanation"]
