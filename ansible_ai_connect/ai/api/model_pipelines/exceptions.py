@@ -118,5 +118,12 @@ class WcaRequestIdCorrelationFailure(WcaException):
 
 
 @dataclass
+class WcaRetryableHttpError(WcaException):
+    """A retryable HTTP error from WCA (transient 422, 429, 5xx)."""
+
+    status_code: int = 0
+
+
+@dataclass
 class WcaInstanceDeleted(WcaException):
     """WCA Instance associated with the Model ID has been deleted."""

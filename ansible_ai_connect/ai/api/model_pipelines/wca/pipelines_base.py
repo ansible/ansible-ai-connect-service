@@ -39,6 +39,7 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaCodeMatchFailure,
     WcaInferenceFailure,
     WcaRequestIdCorrelationFailure,
+    WcaRetryableHttpError,
 )
 from ansible_ai_connect.ai.api.model_pipelines.pipelines import (
     PIPELINE_PARAMETERS,
@@ -244,6 +245,27 @@ class WCABaseMetaData(
             return False
 
     @staticmethod
+    def _raise_for_retryable_status(response: requests.Response) -> None:
+        """Raise for HTTP status codes that should trigger backoff retry.
+
+        Must be called INSIDE the @backoff.on_exception decorated post_request()
+        so that retryable errors actually enter the retry loop.
+        """
+        status_code = response.status_code
+        if status_code == 429:
+            raise WcaRetryableHttpError(status_code=status_code)
+        if status_code == 422:
+            try:
+                payload = response.json()
+                if isinstance(payload, dict):
+                    detail = payload.get("detail")
+                    if detail and "validation failed" in detail.lower():
+                        return
+            except (ValueError, KeyError):
+                pass
+            raise WcaRetryableHttpError(status_code=status_code)
+
+    @staticmethod
     def on_backoff_ibm_cloud_identity_token(details):
         WCABasePipeline.log_backoff_exception(details)
         ibm_cloud_identity_token_retry_counter.inc()
@@ -408,12 +430,14 @@ class WCABaseCompletionsPipeline(
         )
         @wca_codegen_hist.time()
         def post_request():
-            return self.session.post(
+            result = self.session.post(
                 prediction_url,
                 headers=cast(Mapping[str, str], headers),
                 json=data,
                 timeout=self.task_gen_timeout(task_count),
             )
+            self._raise_for_retryable_status(result)
+            return result
 
         try:
             response = post_request()
@@ -431,7 +455,7 @@ class WCABaseCompletionsPipeline(
             InferenceResponseChecks().run_checks(context)
             response.raise_for_status()
 
-        except HTTPError as e:
+        except (HTTPError, WcaRetryableHttpError) as e:
             logger.error(f"WCA inference failed for suggestion {suggestion_id} due to {e}.")
             raise WcaInferenceFailure(model_id=model_id)
 
@@ -481,12 +505,14 @@ class WCABaseContentMatchPipeline(
             )
             @wca_codematch_hist.time()
             def post_request() -> requests.Response:
-                return self.session.post(
+                result = self.session.post(
                     self._search_url,
                     headers=headers,
                     json=data,
                     timeout=self.task_gen_timeout(suggestion_count),
                 )
+                self._raise_for_retryable_status(result)
+                return result
 
             result: requests.Response = post_request()
             context = Context(model_id, result, suggestion_count > 1)
@@ -498,7 +524,7 @@ class WCABaseContentMatchPipeline(
 
             return model_id, response
 
-        except HTTPError:
+        except (HTTPError, WcaRetryableHttpError):
             raise WcaCodeMatchFailure(model_id=model_id)
 
         except requests.exceptions.ReadTimeout:
@@ -560,11 +586,13 @@ class WCABasePlaybookGenerationPipeline(
         )
         @wca_codegen_playbook_hist.time()
         def post_request():
-            return self.session.post(
+            result = self.session.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/playbook",
                 headers=cast(Mapping[str, str], headers),
                 json=data,
             )
+            self._raise_for_retryable_status(result)
+            return result
 
         result = post_request()
 
@@ -647,11 +675,13 @@ class WCABaseRoleGenerationPipeline(
         )
         @wca_codegen_role_hist.time()
         def post_request():
-            return self.session.post(
+            result = self.session.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles",
                 headers=cast(Mapping[str, str], headers),
                 json=data,
             )
+            self._raise_for_retryable_status(result)
+            return result
 
         result = post_request()
 
@@ -734,11 +764,13 @@ class WCABasePlaybookExplanationPipeline(
         )
         @wca_explain_playbook_hist.time()
         def post_request():
-            return self.session.post(
+            result = self.session.post(
                 f"{self.config.inference_url}/v1/wca/explain/ansible/playbook",
                 headers=cast(Mapping[str, str], headers),
                 json=cast(Any, data),
             )
+            self._raise_for_retryable_status(result)
+            return result
 
         result = post_request()
 
@@ -799,11 +831,13 @@ class WCABaseRoleExplanationPipeline(
         )
         @wca_explain_role_hist.time()
         def post_request():
-            return self.session.post(
+            result = self.session.post(
                 f"{self.config.inference_url}/v1/wca/codegen/ansible/roles/explain",
                 headers=cast(Mapping[str, str], headers),
                 json=data,
             )
+            self._raise_for_retryable_status(result)
+            return result
 
         result = post_request()
 

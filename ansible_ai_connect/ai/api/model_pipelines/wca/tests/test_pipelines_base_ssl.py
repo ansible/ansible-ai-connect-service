@@ -21,11 +21,14 @@ This test suite validates the SSL manager integration for WCA pipelines
 to ensure external service connectivity works correctly with centralized SSL management.
 """
 
+from http import HTTPStatus
 from unittest.mock import Mock, patch
 
 import requests
 from django.test import SimpleTestCase, override_settings
 
+from ansible_ai_connect.ai.api.model_pipelines.exceptions import WcaRetryableHttpError
+from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import WCABaseMetaData
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremMetaData,
 )
@@ -275,3 +278,88 @@ class TestWCASSLConfigurationIntegration(SimpleTestCase):
 
         # Verify SSL manager was called correctly
         mock_ssl_manager.get_requests_session.assert_called_once_with()
+
+
+class TestWCAFatalException(SimpleTestCase):
+
+    def _make_request_exception(self, status_code):
+        exc = requests.RequestException()
+        response = requests.Response()
+        response.status_code = status_code
+        exc.response = response
+        return exc
+
+    def test_non_request_exception_is_not_fatal(self):
+        self.assertFalse(WCABaseMetaData.fatal_exception(Exception()))
+
+    def test_server_error_is_not_fatal(self):
+        exc = self._make_request_exception(HTTPStatus.INTERNAL_SERVER_ERROR)
+        self.assertFalse(WCABaseMetaData.fatal_exception(exc))
+
+    def test_too_many_requests_is_not_fatal(self):
+        exc = self._make_request_exception(HTTPStatus.TOO_MANY_REQUESTS)
+        self.assertFalse(WCABaseMetaData.fatal_exception(exc))
+
+    def test_bad_request_is_fatal(self):
+        exc = self._make_request_exception(HTTPStatus.BAD_REQUEST)
+        self.assertTrue(WCABaseMetaData.fatal_exception(exc))
+
+    def test_unprocessable_entity_is_fatal(self):
+        exc = self._make_request_exception(HTTPStatus.UNPROCESSABLE_ENTITY)
+        self.assertTrue(WCABaseMetaData.fatal_exception(exc))
+
+
+class TestRaiseForRetryableStatus(SimpleTestCase):
+
+    def _make_response(self, status_code, json_body=None):
+        response = Mock(spec=requests.Response)
+        response.status_code = status_code
+        response.json.return_value = json_body if json_body is not None else {}
+        return response
+
+    def test_200_does_not_raise(self):
+        response = self._make_response(200)
+        WCABaseMetaData._raise_for_retryable_status(response)
+
+    def test_400_does_not_raise(self):
+        response = self._make_response(400)
+        WCABaseMetaData._raise_for_retryable_status(response)
+
+    def test_403_does_not_raise(self):
+        response = self._make_response(403)
+        WCABaseMetaData._raise_for_retryable_status(response)
+
+    def test_500_does_not_raise(self):
+        response = self._make_response(500)
+        WCABaseMetaData._raise_for_retryable_status(response)
+
+    def test_429_raises(self):
+        response = self._make_response(429)
+        with self.assertRaises(WcaRetryableHttpError) as ctx:
+            WCABaseMetaData._raise_for_retryable_status(response)
+        self.assertEqual(ctx.exception.status_code, 429)
+
+    def test_transient_422_raises(self):
+        response = self._make_response(422, {"detail": "some transient error"})
+        with self.assertRaises(WcaRetryableHttpError) as ctx:
+            WCABaseMetaData._raise_for_retryable_status(response)
+        self.assertEqual(ctx.exception.status_code, 422)
+
+    def test_422_empty_body_raises(self):
+        response = self._make_response(422, {})
+        with self.assertRaises(WcaRetryableHttpError):
+            WCABaseMetaData._raise_for_retryable_status(response)
+
+    def test_422_non_json_raises(self):
+        response = self._make_response(422)
+        response.json.side_effect = ValueError("No JSON")
+        with self.assertRaises(WcaRetryableHttpError):
+            WCABaseMetaData._raise_for_retryable_status(response)
+
+    def test_422_validation_failed_does_not_raise(self):
+        response = self._make_response(422, {"detail": "Validation failed"})
+        WCABaseMetaData._raise_for_retryable_status(response)
+
+    def test_422_validation_failed_case_insensitive(self):
+        response = self._make_response(422, {"detail": "VALIDATION FAILED for input"})
+        WCABaseMetaData._raise_for_retryable_status(response)

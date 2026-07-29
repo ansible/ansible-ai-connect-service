@@ -1155,6 +1155,92 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
         )
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_transient_422_is_retried(self):
+        model_id = "zavala"
+        api_key = "abc123"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        transient_422 = MockResponse(
+            json={"detail": "some transient error from ARI"},
+            status_code=422,
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_REQUEST_ID)},
+        )
+        success_200 = MockResponse(
+            json={"predictions": ["ansible.builtin.apt:\n  name: ffmpeg"]},
+            status_code=200,
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_REQUEST_ID)},
+        )
+        model_client = WCASaaSCompletionsPipeline(self.config)
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(side_effect=[transient_422, success_200])
+        model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
+        model_client.invoke(
+            CompletionsParameters.init(
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_REQUEST_ID,
+            ),
+        )
+        self.assertEqual(model_client.session.post.call_count, 2)
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_transient_422_exhausts_retries(self):
+        model_id = "zavala"
+        api_key = "abc123"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        transient_422 = MockResponse(
+            json={"detail": "some transient error from ARI"},
+            status_code=422,
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_REQUEST_ID)},
+        )
+        model_client = WCASaaSCompletionsPipeline(self.config)
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(return_value=transient_422)
+        model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
+        with self.assertRaises(WcaInferenceFailure):
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
+            )
+        self.assertEqual(model_client.session.post.call_count, self.config.retry_count + 1)
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_multitask_with_task_preamble(self):
         self._do_inference(
             suggestion_id=str(DEFAULT_REQUEST_ID),
