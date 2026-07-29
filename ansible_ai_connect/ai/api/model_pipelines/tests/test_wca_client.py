@@ -37,6 +37,8 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaBadRequest,
     WcaCodeMatchFailure,
     WcaEmptyResponse,
+    WcaExplanationFailure,
+    WcaGenerationFailure,
     WcaInferenceFailure,
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -378,7 +380,7 @@ class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLog
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
         with (
-            self.assertRaises(WcaInferenceFailure),
+            self.assertRaises(WcaGenerationFailure),
             self.assertLogs(
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
@@ -620,7 +622,7 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
         with (
-            self.assertRaises(WcaInferenceFailure),
+            self.assertRaises(WcaExplanationFailure),
             self.assertLogs(
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,

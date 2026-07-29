@@ -104,6 +104,16 @@ class WcaValidationFailure(WcaException):
 
 
 @dataclass
+class WcaGenerationFailure(WcaException):
+    """An attempt to run a WCA playbook or role generation failed."""
+
+
+@dataclass
+class WcaExplanationFailure(WcaException):
+    """An attempt to run a WCA playbook or role explanation failed."""
+
+
+@dataclass
 class WcaCodeMatchFailure(WcaException):
     """An attempt to run a WCA code match failed."""
 

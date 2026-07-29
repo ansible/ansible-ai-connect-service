@@ -37,6 +37,8 @@ from ansible_ai_connect.ai.api.formatter import (
 from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     ModelTimeoutError,
     WcaCodeMatchFailure,
+    WcaExplanationFailure,
+    WcaGenerationFailure,
     WcaInferenceFailure,
     WcaRequestIdCorrelationFailure,
     WcaRetryableHttpError,
@@ -619,7 +621,7 @@ class WCABasePlaybookGenerationPipeline(
 
         except (HTTPError, WcaRetryableHttpError) as e:
             logger.error(f"WCA playbook generation failed due to {e}.")
-            raise WcaInferenceFailure(model_id=model_id)
+            raise WcaGenerationFailure(model_id=model_id)
 
         response = json.loads(result.text)
 
@@ -715,7 +717,7 @@ class WCABaseRoleGenerationPipeline(
 
         except (HTTPError, WcaRetryableHttpError) as e:
             logger.error(f"WCA role generation failed due to {e}.")
-            raise WcaInferenceFailure(model_id=model_id)
+            raise WcaGenerationFailure(model_id=model_id)
 
         response = json.loads(result.text)
 
@@ -811,7 +813,7 @@ class WCABasePlaybookExplanationPipeline(
 
         except (HTTPError, WcaRetryableHttpError) as e:
             logger.error(f"WCA playbook explanation failed due to {e}.")
-            raise WcaInferenceFailure(model_id=model_id)
+            raise WcaExplanationFailure(model_id=model_id)
 
         response = json.loads(result.text)
         return response["explanation"]
@@ -885,7 +887,7 @@ class WCABaseRoleExplanationPipeline(
 
         except (HTTPError, WcaRetryableHttpError) as e:
             logger.error(f"WCA role explanation failed due to {e}.")
-            raise WcaInferenceFailure(model_id=model_id)
+            raise WcaExplanationFailure(model_id=model_id)
 
         response = json.loads(result.text)
         return response["explanation"]
