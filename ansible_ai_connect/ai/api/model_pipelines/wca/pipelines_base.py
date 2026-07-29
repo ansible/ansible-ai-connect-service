@@ -255,6 +255,13 @@ class WCABaseMetaData(
         if status_code == 429:
             raise WcaRetryableHttpError(status_code=status_code)
         if status_code == 422:
+            # WCA returns 422 for two distinct cases:
+            # 1. Genuine validation failure — detail contains "validation failed".
+            #    This is deterministic and should NOT be retried. We return here
+            #    so that ResponseStatusCode422WCAValidationFailure in wca_utils.py
+            #    can handle it as WcaValidationFailure after post_request() returns.
+            # 2. Transient failure (e.g. sporadic ARI errors) — any other 422.
+            #    This should bThae retried via backoff.
             try:
                 payload = response.json()
                 if isinstance(payload, dict):

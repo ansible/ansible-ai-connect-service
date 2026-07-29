@@ -119,7 +119,7 @@ class WcaRequestIdCorrelationFailure(WcaException):
 
 @dataclass
 class WcaRetryableHttpError(WcaException):
-    """A retryable HTTP error from WCA (transient 422, 429, 5xx)."""
+    """A retryable HTTP error from WCA (transient 422, 429)."""
 
     status_code: int = 0
 
