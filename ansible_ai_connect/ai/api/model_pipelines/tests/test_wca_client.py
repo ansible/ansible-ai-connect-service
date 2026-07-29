@@ -67,10 +67,13 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     wca_codegen_playbook_retry_counter,
     wca_codegen_retry_counter,
     wca_codegen_role_hist,
+    wca_codegen_role_retry_counter,
     wca_codematch_hist,
     wca_codematch_retry_counter,
     wca_explain_playbook_hist,
     wca_explain_playbook_retry_counter,
+    wca_explain_role_hist,
+    wca_explain_role_retry_counter,
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremCompletionsPipeline,
@@ -546,6 +549,29 @@ class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwar
                 continue
             self.assertEqual(file["content"], "---\n- ansible.builtin.package:\n    name: emacs\n")
 
+    @assert_call_count_metrics(metric=wca_codegen_role_hist)
+    @assert_call_count_metrics(metric=wca_codegen_role_retry_counter)
+    def test_role_gen_error(self):
+        request = Mock()
+        model_client = WCASaaSRoleGenerationPipeline(mock_pipeline_config("wca"))
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.get_model_id = Mock(return_value="a-random-model")
+        model_client.session = Mock()
+        model_client.session.post = Mock(side_effect=HTTPError(500))
+        with (
+            self.assertRaises(WcaGenerationFailure),
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
+            ) as log,
+        ):
+            model_client.invoke(
+                RoleGenerationParameters.init(
+                    request=request, text="Install Wordpress", create_outline=True
+                )
+            )
+            self.assertInLog("Caught retryable error after 1 tries.", log)
+
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
@@ -629,6 +655,31 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
         ):
             model_client.invoke(
                 PlaybookExplanationParameters.init(request=request, content="Some playbook")
+            )
+            self.assertInLog("Caught retryable error after 1 tries.", log)
+
+    @assert_call_count_metrics(metric=wca_explain_role_hist)
+    @assert_call_count_metrics(metric=wca_explain_role_retry_counter)
+    def test_role_exp_error(self):
+        request = Mock()
+        model_client = WCASaaSRoleExplanationPipeline(mock_pipeline_config("wca"))
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.get_model_id = Mock(return_value="a-random-model")
+        model_client.session = Mock()
+        model_client.session.post = Mock(side_effect=HTTPError(500))
+        with (
+            self.assertRaises(WcaExplanationFailure),
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
+            ) as log,
+        ):
+            model_client.invoke(
+                RoleExplanationParameters.init(
+                    request=request,
+                    files=[{"name": "tasks/main.yml", "content": "- package:\n    name: emacs"}],
+                    role_name="my_role",
+                )
             )
             self.assertInLog("Caught retryable error after 1 tries.", log)
 
