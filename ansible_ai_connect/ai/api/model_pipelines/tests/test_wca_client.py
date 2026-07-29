@@ -37,6 +37,8 @@ from ansible_ai_connect.ai.api.model_pipelines.exceptions import (
     WcaBadRequest,
     WcaCodeMatchFailure,
     WcaEmptyResponse,
+    WcaExplanationFailure,
+    WcaGenerationFailure,
     WcaInferenceFailure,
     WcaInvalidModelId,
     WcaKeyNotFound,
@@ -65,10 +67,13 @@ from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base import (
     wca_codegen_playbook_retry_counter,
     wca_codegen_retry_counter,
     wca_codegen_role_hist,
+    wca_codegen_role_retry_counter,
     wca_codematch_hist,
     wca_codematch_retry_counter,
     wca_explain_playbook_hist,
     wca_explain_playbook_retry_counter,
+    wca_explain_role_hist,
+    wca_explain_role_retry_counter,
 )
 from ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_onprem import (
     WCAOnPremCompletionsPipeline,
@@ -378,7 +383,7 @@ class TestWCAClientPlaybookGeneration(WisdomAppsBackendMocking, WisdomServiceLog
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
         with (
-            self.assertRaises(HTTPError),
+            self.assertRaises(WcaGenerationFailure),
             self.assertLogs(
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
@@ -544,6 +549,29 @@ class TestWCAClientRoleGeneration(WisdomAppsBackendMocking, WisdomServiceLogAwar
                 continue
             self.assertEqual(file["content"], "---\n- ansible.builtin.package:\n    name: emacs\n")
 
+    @assert_call_count_metrics(metric=wca_codegen_role_hist)
+    @assert_call_count_metrics(metric=wca_codegen_role_retry_counter)
+    def test_role_gen_error(self):
+        request = Mock()
+        model_client = WCASaaSRoleGenerationPipeline(mock_pipeline_config("wca"))
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.get_model_id = Mock(return_value="a-random-model")
+        model_client.session = Mock()
+        model_client.session.post = Mock(side_effect=HTTPError(500))
+        with (
+            self.assertRaises(WcaGenerationFailure),
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
+            ) as log,
+        ):
+            model_client.invoke(
+                RoleGenerationParameters.init(
+                    request=request, text="Install Wordpress", create_outline=True
+                )
+            )
+            self.assertInLog("Caught retryable error after 1 tries.", log)
+
 
 @override_settings(WCA_SECRET_BACKEND_TYPE="dummy")
 @override_settings(ENABLE_ANSIBLE_LINT_POSTPROCESS=False)
@@ -620,13 +648,38 @@ class TestWCAClientExplanation(WisdomAppsBackendMocking, WisdomServiceLogAwareTe
         model_client.session = Mock()
         model_client.session.post = Mock(side_effect=HTTPError(500))
         with (
-            self.assertRaises(HTTPError),
+            self.assertRaises(WcaExplanationFailure),
             self.assertLogs(
                 logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
             ) as log,
         ):
             model_client.invoke(
                 PlaybookExplanationParameters.init(request=request, content="Some playbook")
+            )
+            self.assertInLog("Caught retryable error after 1 tries.", log)
+
+    @assert_call_count_metrics(metric=wca_explain_role_hist)
+    @assert_call_count_metrics(metric=wca_explain_role_retry_counter)
+    def test_role_exp_error(self):
+        request = Mock()
+        model_client = WCASaaSRoleExplanationPipeline(mock_pipeline_config("wca"))
+        model_client.get_api_key = Mock(return_value="some-key")
+        model_client.get_token = Mock(return_value={"access_token": "a-token"})
+        model_client.get_model_id = Mock(return_value="a-random-model")
+        model_client.session = Mock()
+        model_client.session.post = Mock(side_effect=HTTPError(500))
+        with (
+            self.assertRaises(WcaExplanationFailure),
+            self.assertLogs(
+                logger="ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base", level="INFO"
+            ) as log,
+        ):
+            model_client.invoke(
+                RoleExplanationParameters.init(
+                    request=request,
+                    files=[{"name": "tasks/main.yml", "content": "- package:\n    name: emacs"}],
+                    role_name="my_role",
+                )
             )
             self.assertInLog("Caught retryable error after 1 tries.", log)
 
@@ -1153,6 +1206,92 @@ class TestWCACodegen(WisdomAppsBackendMocking, WisdomServiceLogAwareTestCase):
             'Content:b\'{"detail": "Validation failed"}\'',
             log,
         )
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_transient_422_is_retried(self):
+        model_id = "zavala"
+        api_key = "abc123"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        transient_422 = MockResponse(
+            json={"detail": "some transient error from ARI"},
+            status_code=422,
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_REQUEST_ID)},
+        )
+        success_200 = MockResponse(
+            json={"predictions": ["ansible.builtin.apt:\n  name: ffmpeg"]},
+            status_code=200,
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_REQUEST_ID)},
+        )
+        model_client = WCASaaSCompletionsPipeline(self.config)
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(side_effect=[transient_422, success_200])
+        model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
+        model_client.invoke(
+            CompletionsParameters.init(
+                request=Mock(),
+                model_input=model_input,
+                model_id=model_id,
+                suggestion_id=DEFAULT_REQUEST_ID,
+            ),
+        )
+        self.assertEqual(model_client.session.post.call_count, 2)
+
+    @assert_call_count_metrics(metric=wca_codegen_hist)
+    def test_infer_transient_422_exhausts_retries(self):
+        model_id = "zavala"
+        api_key = "abc123"
+        model_input = {
+            "instances": [
+                {
+                    "context": "null",
+                    "prompt": "- name: install ffmpeg on Red Hat Enterprise Linux",
+                }
+            ]
+        }
+        token = {
+            "access_token": "access_token",
+            "refresh_token": "not_supported",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "expiration": 1691445310,
+            "scope": "ibm openid",
+        }
+        transient_422 = MockResponse(
+            json={"detail": "some transient error from ARI"},
+            status_code=422,
+            headers={WCA_REQUEST_ID_HEADER: str(DEFAULT_REQUEST_ID)},
+        )
+        model_client = WCASaaSCompletionsPipeline(self.config)
+        model_client.get_token = Mock(return_value=token)
+        model_client.session.post = Mock(return_value=transient_422)
+        model_client.get_model_id = Mock(return_value=model_id)
+        model_client.get_api_key = Mock(return_value=api_key)
+        with self.assertRaises(WcaInferenceFailure):
+            model_client.invoke(
+                CompletionsParameters.init(
+                    request=Mock(),
+                    model_input=model_input,
+                    model_id=model_id,
+                    suggestion_id=DEFAULT_REQUEST_ID,
+                ),
+            )
+        self.assertEqual(model_client.session.post.call_count, self.config.retry_count + 1)
 
     @assert_call_count_metrics(metric=wca_codegen_hist)
     def test_infer_multitask_with_task_preamble(self):

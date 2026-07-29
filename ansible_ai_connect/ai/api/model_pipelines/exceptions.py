@@ -104,6 +104,16 @@ class WcaValidationFailure(WcaException):
 
 
 @dataclass
+class WcaGenerationFailure(WcaException):
+    """An attempt to run a WCA playbook or role generation failed."""
+
+
+@dataclass
+class WcaExplanationFailure(WcaException):
+    """An attempt to run a WCA playbook or role explanation failed."""
+
+
+@dataclass
 class WcaCodeMatchFailure(WcaException):
     """An attempt to run a WCA code match failed."""
 
@@ -115,6 +125,13 @@ class WcaRequestIdCorrelationFailure(WcaException):
     def __init__(self, model_id, x_request_id: uuid.uuid4):
         super().__init__(model_id)
         self.x_request_id: uuid.uuid4 = x_request_id
+
+
+@dataclass
+class WcaRetryableHttpError(WcaException):
+    """A retryable HTTP error from WCA (transient 422, 429)."""
+
+    status_code: int = 0
 
 
 @dataclass
