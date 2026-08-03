@@ -256,7 +256,7 @@ packaging==25.0
     #   ansible-lint
     #   black
     #   incremental
-parso==0.8.5
+parso==0.8.7
     # via jedi
 pathspec==1.0.4
     # via
