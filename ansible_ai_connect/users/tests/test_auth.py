@@ -206,6 +206,39 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
             access_token = "dummy_token"
             self.assertFalse(authentication.user_has_valid_license(access_token))
 
+    @patch("django.conf.settings.AAP_API_URL", "http://aap.test")
+    def test_auth_params_include_pkce_challenge(self):
+        backend = AAPOAuth2()
+        session = {}
+        backend.strategy = MagicMock()
+        backend.strategy.setting = lambda name, default=None, **kwargs: default
+        backend.strategy.session_set = lambda k, v: session.__setitem__(k, v)
+        backend.strategy.session_get = lambda k, d=None: session.get(k, d)
+        backend.strategy.random_string = lambda n: "a" * n
+        backend.get_key_and_secret = MagicMock(return_value=("id", "secret"))
+        backend.get_redirect_uri = MagicMock(return_value="http://localhost/callback")
+
+        params = backend.auth_params(state="test-state")
+
+        self.assertIn("code_challenge", params)
+        self.assertIn("code_challenge_method", params)
+        self.assertEqual(params["code_challenge_method"], "S256")
+
+    @patch("django.conf.settings.AAP_API_URL", "http://aap.test")
+    def test_auth_complete_params_include_pkce_verifier(self):
+        backend = AAPOAuth2()
+        session = {"aap_code_verifier": "test-verifier"}
+        backend.strategy = MagicMock()
+        backend.strategy.setting = lambda name, default=None, **kwargs: default
+        backend.strategy.session_get = lambda k, d=None: session.get(k, d)
+        backend.data = {"code": "auth-code"}
+        backend.get_key_and_secret = MagicMock(return_value=("id", "secret"))
+        backend.get_redirect_uri = MagicMock(return_value="http://localhost/callback")
+
+        params = backend.auth_complete_params(state="test-state")
+
+        self.assertEqual(params["code_verifier"], "test-verifier")
+
 
 class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
     def setUp(self):

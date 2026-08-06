@@ -17,7 +17,7 @@ import logging
 import jwt
 from django.conf import settings
 from rest_framework import authentication
-from social_core.backends.oauth import BaseOAuth2
+from social_core.backends.oauth import BaseOAuth2PKCE
 from social_django.models import UserSocialAuth
 from social_django.utils import load_backend, load_strategy
 
@@ -29,8 +29,10 @@ from ansible_ai_connect.users.constants import (
 logger = logging.getLogger("auth")
 
 
-class AAPOAuth2(BaseOAuth2):
+class AAPOAuth2(BaseOAuth2PKCE):
     """AAP OAuth authentication backend"""
+
+    PKCE_DEFAULT_CODE_CHALLENGE_METHOD = "S256"
 
     name = USER_SOCIAL_AUTH_PROVIDER_AAP
     # SOCIAL_AUTH_AAP_USER_FIELDS
