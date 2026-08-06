@@ -7,7 +7,7 @@ name = "ansible-ai-connect"
 description = "Ansible Lightspeed with IBM watsonx Code Assistant."
 version = "0.1.0"
 dependencies = [
-  'aiohttp~=3.14.1',
+  'aiohttp~=3.14.3',
   'ansible-core~=2.16.19',
   'ansible-anonymizer~=1.5.0',
   'ansible-lint~=25.5.0',
@@ -88,7 +88,7 @@ constraint-dependencies = [
   # Use Red Hat's system-certifi for certificate handling
   'certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9',
   'pyopenssl>=26.0.0',
-  'cryptography>=48.0.1',
+  'cryptography>=50.0.0',
   'dynaconf>=3.2.13',
   'pyjwt>=2.13.0',
   'ujson>=5.13.0',
