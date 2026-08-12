@@ -42,7 +42,7 @@
     "immutable": ">=5.1.8",
     "js-yaml": ">=4.3.0",
     "marked": ">=18.0.2",
-    "postcss": ">=8.5.10",
+    "postcss": ">=8.5.23",
     "js-cookie": ">=3.0.6"
   },
   "devDependencies": {
