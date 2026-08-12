@@ -66,7 +66,7 @@
     "playwright": "^1.49.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.5.2",
+    "react-router-dom": "^7.18.2",
     "sass-embedded": "^1.79.1",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.24.0",
@@ -79,11 +79,15 @@
     "web-vitals": "^2.1.4"
   },
   "overrides": {
+    "brace-expansion": "1.1.18",
     "minimatch": "^3.1.3",
     "marked": ">=18.0.2",
-    "dompurify": ">=3.4.0",
-    "postcss": ">=8.5.10",
-    "fast-uri": ">=3.1.1",
-    "js-cookie": ">=3.0.6"
+    "dompurify": "3.4.13",
+    "postcss": "8.5.23",
+    "fast-uri": "4.1.2",
+    "js-cookie": ">=3.0.6",
+    "js-yaml": "4.3.1",
+    "nanoid": "3.3.18",
+    "react-router": "7.18.2"
   }
 }
