@@ -33,6 +33,14 @@ def exception_handler_with_error_type(exc, context):
         if hasattr(exc, "default_code"):
             response.error_type = exc.default_code
 
+        # Django Http404 / PermissionDenied (and similar) are converted to a
+        # Response by DRF but do not implement get_full_details(). Reshaping
+        # those would raise AttributeError and turn a correct 404/403 into a
+        # 500 — which Gateway outlier detection then treats as an unhealthy
+        # upstream (AAP-78941). Leave DRF's response intact for those cases.
+        if not hasattr(exc, "get_full_details"):
+            return response
+
         # Discard the default 'detail' property
         # We add the 'code', 'message' and 'model' to 'data' root
         if isinstance(response.data, dict):
