@@ -12,12 +12,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
+from django.http import Http404
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
 
 def exception_handler_with_error_type(exc, context):
+    # DRF's exception_handler converts Http404 / Django PermissionDenied to
+    # APIException subclasses only via a local rebind — the original exc is what
+    # we receive. Convert here so reshape sees get_full_details / default_code
+    # and 404/403 bodies match every other API error (AAP-78941).
+    if isinstance(exc, Http404):
+        exc = NotFound(*exc.args)
+    elif isinstance(exc, DjangoPermissionDenied):
+        exc = PermissionDenied(*exc.args)
+
     # Call the default exception handler first
     response = exception_handler(exc, context)
 
@@ -25,7 +37,7 @@ def exception_handler_with_error_type(exc, context):
     context["request"].accepted_media_type = "application/json"
     context["request"].accepted_renderer = JSONRenderer()
 
-    if isinstance(response, Response):
+    if isinstance(response, Response) and isinstance(exc, APIException):
         # Add error type if specified.
         # This is used in Segment Events. The events have an 'error_type' property.
         # We therefore have to keep the same property name to support correlation
