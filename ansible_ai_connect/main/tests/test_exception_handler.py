@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 from http import HTTPStatus
+from uuid import uuid4
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -21,6 +22,7 @@ from rest_framework.exceptions import NotAuthenticated, ValidationError
 
 from ansible_ai_connect.ai.api.exceptions import WisdomBadRequest
 from ansible_ai_connect.main.exception_handler import exception_handler_with_error_type
+from ansible_ai_connect.test_utils import WisdomServiceAPITestCaseBase
 
 
 class ExceptionHandlerWithErrorTypeTests(SimpleTestCase):
@@ -32,21 +34,25 @@ class ExceptionHandlerWithErrorTypeTests(SimpleTestCase):
         request = self.factory.get("/api/v1/service-index/resources/missing/")
         return {"request": request}
 
-    def test_http404_returns_404_without_raising(self):
-        """Missing resources must stay 404; do not crash into 500 (AAP-78941)."""
+    def test_http404_returns_reshaped_404(self):
+        """Missing resources must stay 404 with the standard error body (AAP-78941)."""
         response = exception_handler_with_error_type(
             Http404("No Resource matches"), self._context()
         )
 
         self.assertIsNotNone(response)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        self.assertIn("detail", response.data)
+        self.assertEqual(response.data["code"], "not_found")
+        self.assertEqual(str(response.data["message"]), "No Resource matches")
+        self.assertEqual(response.error_type, "not_found")
 
-    def test_permission_denied_returns_403_without_raising(self):
+    def test_permission_denied_returns_reshaped_403(self):
         response = exception_handler_with_error_type(PermissionDenied(), self._context())
 
         self.assertIsNotNone(response)
         self.assertEqual(response.status_code, HTTPStatus.FORBIDDEN)
+        self.assertEqual(response.data["code"], "permission_denied")
+        self.assertEqual(response.error_type, "permission_denied")
 
     def test_api_exception_is_still_reshaped(self):
         exc = WisdomBadRequest("bad input")
@@ -77,3 +83,17 @@ class ExceptionHandlerWithErrorTypeTests(SimpleTestCase):
         self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
         self.assertEqual(response.data["code"], exc.default_code)
         self.assertEqual(response.error_type, exc.default_code)
+
+
+class TestMissingResourceDelete(WisdomServiceAPITestCaseBase):
+    def test_delete_missing_resource_returns_404(self):
+        """DELETE of an unknown ansible_id must be 404, not 500 (AAP-78941)."""
+        self.user.is_superuser = True
+        self.user.save()
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.delete(f"/api/v1/service-index/resources/{uuid4()}/")
+
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(response.data["code"], "not_found")
+        self.assertIn("message", response.data)
