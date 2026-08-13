@@ -34,7 +34,9 @@ class ExceptionHandlerWithErrorTypeTests(SimpleTestCase):
 
     def test_http404_returns_404_without_raising(self):
         """Missing resources must stay 404; do not crash into 500 (AAP-78941)."""
-        response = exception_handler_with_error_type(Http404("No Resource matches"), self._context())
+        response = exception_handler_with_error_type(
+            Http404("No Resource matches"), self._context()
+        )
 
         self.assertIsNotNone(response)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
