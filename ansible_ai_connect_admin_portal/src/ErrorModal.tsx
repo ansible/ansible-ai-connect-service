@@ -17,8 +17,7 @@ interface ErrorModalProps {
 }
 
 export type HasError =
-  | { inError: false }
-  | { inError: true; message: string; detail: string };
+  { inError: false } | { inError: true; message: string; detail: string };
 export const NO_ERROR: HasError = { inError: false };
 
 export const ErrorModal = (props: ErrorModalProps) => {
