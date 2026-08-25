@@ -1,10 +1,6 @@
 // Loading statuses and payloads
 export type Status =
-  | "NOT_ASKED"
-  | "LOADING"
-  | "FAILURE"
-  | "SUCCESS"
-  | "SUCCESS_NOT_FOUND";
+  "NOT_ASKED" | "LOADING" | "FAILURE" | "SUCCESS" | "SUCCESS_NOT_FOUND";
 export type NotAsked = { status: "NOT_ASKED" };
 export type Loading = { status: "LOADING" };
 export type Failure = { status: "FAILURE"; error: Error };
@@ -12,23 +8,11 @@ export type Success<R> = { status: "SUCCESS"; data: R };
 export type SuccessNotFound = { status: "SUCCESS_NOT_FOUND" };
 
 export type WcaKey =
-  | NotAsked
-  | Loading
-  | Failure
-  | Success<WcaKeyResponse>
-  | SuccessNotFound;
+  NotAsked | Loading | Failure | Success<WcaKeyResponse> | SuccessNotFound;
 export type WcaModelId =
-  | NotAsked
-  | Loading
-  | Failure
-  | Success<WcaModelIdResponse>
-  | SuccessNotFound;
+  NotAsked | Loading | Failure | Success<WcaModelIdResponse> | SuccessNotFound;
 export type Telemetry =
-  | NotAsked
-  | Loading
-  | Failure
-  | Success<TelemetryResponse>
-  | SuccessNotFound;
+  NotAsked | Loading | Failure | Success<TelemetryResponse> | SuccessNotFound;
 
 // Request objects for the REST [GET] APIs
 export interface WcaKeyRequest {
