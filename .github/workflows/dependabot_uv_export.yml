@@ -1,0 +1,51 @@
+name: wisdom-service - dependabot uv export
+# Regenerate the committed requirements.txt on Dependabot "uv" PRs.
+#
+# Dependabot's uv updater bumps pyproject.toml + uv.lock but does NOT
+# regenerate the committed requirements.txt export, so those PRs fail the
+# "wisdom-service - uv-export" gate. This workflow re-runs the export and
+# pushes the result back to the PR branch.
+#
+# Why a PAT (UV_EXPORT_PAT) instead of the default GITHUB_TOKEN:
+#   * Dependabot PRs run with a read-only GITHUB_TOKEN, so it cannot push.
+#   * Commits pushed with GITHUB_TOKEN do NOT trigger new workflow runs, so
+#     the required uv-export gate would never re-run and the PR would stay
+#     blocked. A push authenticated with a PAT re-triggers the gate.
+# The PAT must be stored as a *Dependabot* secret (Settings -> Secrets and
+# variables -> Dependabot), because Dependabot-triggered runs cannot read
+# regular Actions secrets.
+on:
+  pull_request:
+    branches:
+      - main
+      - 'stable-*'
+    paths:
+      - pyproject.toml
+      - uv.lock
+
+permissions:
+  contents: read
+
+jobs:
+  uv-export:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.UV_EXPORT_PAT }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+      - name: Regenerate requirements.txt from uv.lock
+        run: ./tools/scripts/uv-export.sh
+      - name: Commit and push if requirements.txt changed
+        run: |
+          if git diff --quiet -- requirements.txt; then
+            echo "requirements.txt already up to date; nothing to do."
+            exit 0
+          fi
+          git config user.name "dependabot[bot]"
+          git config user.email "49699333+dependabot[bot]@users.noreply.github.com"
+          git commit -am "deps: regenerate requirements.txt from uv.lock"
+          git push
