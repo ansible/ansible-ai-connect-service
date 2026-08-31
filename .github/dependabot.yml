@@ -1,7 +1,12 @@
 version: 2
 updates:
   # Python dependencies
-  - package-ecosystem: "pip"
+  # Use the "uv" ecosystem (not "pip"): requirements.txt is a generated
+  # artifact exported from uv.lock + pyproject.toml, and the uv-export CI
+  # gate regenerates it. A pip updater edits only requirements.txt, which
+  # `uv lock` then reverts, so those PRs can never pass CI. The uv ecosystem
+  # updates pyproject.toml + uv.lock (the source of truth) instead.
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "daily"
