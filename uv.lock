@@ -221,7 +221,7 @@ requires-dist = [
     { name = "ansible-anonymizer", specifier = "~=1.5.0" },
     { name = "ansible-core", specifier = "~=2.16.19" },
     { name = "ansible-lint", specifier = "~=25.5.0" },
-    { name = "black", marker = "extra == 'dev'", specifier = ">=26.3.1,<26.6.0" },
+    { name = "black", marker = "extra == 'dev'", specifier = "~=26.5.1" },
     { name = "boto3", specifier = "~=1.40" },
     { name = "cbor2", specifier = "~=5.9.0" },
     { name = "coverage", marker = "extra == 'dev'", specifier = "~=7.2.1" },
