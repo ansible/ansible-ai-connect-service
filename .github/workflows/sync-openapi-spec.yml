@@ -75,7 +75,7 @@ jobs:
           echo "📍 Source branch: $SOURCE_BRANCH → Target branch: $TARGET_BRANCH"
 
       - name: Setup Python 3.12
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
