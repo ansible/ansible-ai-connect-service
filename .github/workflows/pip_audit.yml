@@ -61,3 +61,7 @@ jobs:
             # Disputed — pyjwt 2.12.1 is latest, no fix version available
             # See: https://osv.dev/vulnerability/PYSEC-2025-183
             PYSEC-2025-183
+            # DRF 3.17.2 fixes CVE-2026-73228/73229, but django-ansible-base pins
+            # djangorestframework<3.16 — no satisfiable upgrade path yet.
+            CVE-2026-73228
+            CVE-2026-73229
