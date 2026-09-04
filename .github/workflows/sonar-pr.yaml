@@ -45,6 +45,7 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: Extract PR metadata and validate workflow_run
+        id: pr_meta
         env:
           REPO_NAME: ${{ github.event.repository.full_name }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -74,8 +75,11 @@ jobs:
             echo "::warning::PR head: $PR_HEAD_REPO/$PR_HEAD @ $PR_HEAD_SHA"
             echo "::warning::Workflow: $WORKFLOW_HEAD_REPO/$WORKFLOW_HEAD_BRANCH @ $WORKFLOW_HEAD_SHA"
             echo "::notice::Skipping SonarCloud analysis - PR has been updated since workflow started"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
           # Export validated variables
           echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
@@ -86,6 +90,7 @@ jobs:
           gh pr checkout "$PR_NUMBER"
 
       - name: Extract repo owner and name (fork-aware)
+        if: steps.pr_meta.outputs.skip != 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -100,11 +105,25 @@ jobs:
           echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
 
       - name: Verify SONAR_TOKEN is set
+        if: steps.pr_meta.outputs.skip != 'true'
         run: test -n "$SONAR_TOKEN" || { echo "SONAR_TOKEN is empty — check vars.SONAR_TOKEN_SECRET_NAME"; exit 1; }
         env:
           SONAR_TOKEN: ${{ secrets[format('{0}', vars.SONAR_TOKEN_SECRET_NAME)] }}
 
+      - name: Fail fast if PR context is incomplete
+        if: steps.pr_meta.outputs.skip != 'true'
+        run: |
+          # An empty sonar.pullrequest.key makes the scanner silently fall back to
+          # a branch analysis and overwrite main's results. Never let that happen.
+          for v in PR_NUMBER PR_BASE PR_HEAD; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is empty - refusing to run a scan that would be treated as a branch analysis"
+              exit 1
+            fi
+          done
+
       - name: SonarCloud Scan
+        if: steps.pr_meta.outputs.skip != 'true'
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
