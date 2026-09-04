@@ -312,7 +312,7 @@ pydantic-core==2.41.5
     # via pydantic
 pydrive2==1.20.0
     # via ansible-ai-connect
-pygments==2.20.0
+pygments==2.21.0
     # via ipython
 pyjwt==2.13.0
     # via
