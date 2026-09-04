@@ -527,7 +527,7 @@ spec:
           memory: 4Gi
         requests:
           memory: 4Gi
-      name: check-container
+      name: app-check
   taskRunTemplate:
     serviceAccountName: build-pipeline-ansible-ai-connect-service
   timeouts:
