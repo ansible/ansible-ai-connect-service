@@ -53,7 +53,7 @@
     "i18next-browser-languagedetector": "^7.1.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jest-environment-jsdom": "^30.5.1",
     "jest-watch-typeahead": "^2.2.2",
     "mini-css-extract-plugin": "^2.4.5",
     "npm-run-all2": "^5.0.0",
