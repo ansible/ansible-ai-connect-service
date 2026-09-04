@@ -230,7 +230,7 @@ matplotlib-inline==0.2.1
     # via ipython
 monotonic==1.6
     # via segment-analytics-python
-msgpack==1.2.1 ; platform_python_implementation == 'CPython'
+msgpack==1.2.2 ; platform_python_implementation == 'CPython'
     # via autobahn
 multidict==6.7.0
     # via
