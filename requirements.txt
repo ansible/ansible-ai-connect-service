@@ -10,7 +10,7 @@ annotated-types==0.7.0
     # via pydantic
 ansible-anonymizer==1.5.0
     # via ansible-ai-connect
-ansible-compat==25.12.0
+ansible-compat==25.12.1
     # via ansible-lint
 ansible-core==2.16.19
     # via
@@ -45,7 +45,7 @@ backcall==0.2.0
     # via ipython
 backoff==2.2.1
     # via segment-analytics-python
-black==26.3.1
+black==26.5.1
     # via ansible-lint
 boto3==1.42.5
     # via ansible-ai-connect
@@ -473,5 +473,5 @@ yarl==1.22.0
     # via aiohttp
 zipp==3.23.0
     # via importlib-metadata
-zope-interface==8.1.1
+zope-interface==8.6
     # via twisted
