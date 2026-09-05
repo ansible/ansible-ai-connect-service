@@ -188,7 +188,7 @@
       "cssnano": {
         "cssnano-preset-default": {
           "postcss-svgo": {
-            "svgo": "3.3.5"
+            "svgo": "2.8.4"
           }
         }
       }
