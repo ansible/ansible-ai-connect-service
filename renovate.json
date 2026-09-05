@@ -6,7 +6,31 @@
   "packageRules": [
     {
       "description": "requirements.txt is GENERATED, not a manifest. Its header says so: `uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt`. The pip_requirements manager treats it as hand-editable and opens PRs that change only that file, leaving uv.lock behind. Those PRs cannot pass the wisdom-service uv-export gate under any circumstances: the gate re-runs `uv lock && uv export` and finds the version the lock still holds. Seen on #2177 (prompt-toolkit 3.0.53 committed, 3.0.52 regenerated) and #2180 (typing-inspection 0.4.4). `uv lock` never rescues them either -- it only makes the lock satisfiable, and the old version already was. The shared default.json disables this manager for the same reason; restated here because this repo resolves through uv rather than pip-compile.",
-      "matchManagers": ["pip_requirements"],
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "npm `overrides` are PATH-scoped: each nested entry pins a version for one consumer chain. Renovate is name-scoped and rewrites every occurrence to the same version, destroying the distinction the nesting exists for. ansible_ai_connect_admin_portal pins svgo twice on purpose -- 3.3.4 under @svgr/plugin-svgo, which needs ^3.0.2, and 2.8.3 under postcss-svgo, which needs ^2.7.0. PR #2179 set both to 3.3.5; postcss-svgo cannot satisfy that, so svgo's whole subtree left the lockfile (92 lines removed, none added) and `npm ci` failed with `Missing: svgo@3.3.5 from lock file`. Same reasoning as the hold in ansible-wisdom-admin-dashboard.",
+      "matchDepTypes": [
+        "overrides"
+      ],
+      "matchManagers": [
+        "npm"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Packages this repository deliberately resolves at two majors for two consumers, where a single-version rewrite drops one copy. ansible_ai_connect_chatbot's lockfile carries @typescript-eslint/parser at 8.59.1 for @typescript-eslint/eslint-plugin (^8.59.1) AND at 7.18.0 nested under eslint-plugin-patternfly-react, whose own eslint-plugin needs ^7.0.0. PR #2178 deleted the nested 7.18.0 copy -- the only node_modules path it removed -- and `npm ci` failed with `Missing: @typescript-eslint/parser@7.18.0`. That damage was done to the LOCKFILE without touching package.json, so the overrides rule above does not cover it.",
+      "matchPackageNames": [
+        "svgo",
+        "@typescript-eslint/parser",
+        "@typescript-eslint/eslint-plugin"
+      ],
+      "matchManagers": [
+        "npm"
+      ],
       "enabled": false
     }
   ]
