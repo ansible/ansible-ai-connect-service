@@ -1,3 +1,19 @@
+# Dependabot version updates are DISABLED.
+#
+# `open-pull-requests-limit: 0` is GitHub's documented way to pause version
+# updates for an ecosystem, chosen over deleting this file so the per-ecosystem
+# reasoning below survives and re-enabling is a one-character change.
+#
+# Dependency updates come from MintMaker (Renovate) instead. Running both
+# produced duplicate PRs for the same bumps across four ecosystems.
+#
+# Note: Dependabot SECURITY updates were already disabled at the repository
+# level (security_and_analysis.dependabot_security_updates), so after this
+# change no Dependabot updates of any kind reach this repository. Renovate is
+# the only source, and its vulnerabilityAlerts/osvVulnerabilityAlerts are
+# disabled in the shared aap-konflux-pipelines preset -- worth confirming that
+# is intended before this lands.
+#
 version: 2
 updates:
   # Python dependencies
@@ -10,7 +26,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0  # disabled — see header
     labels:
       - "dependencies"
       - "python"
@@ -28,7 +44,7 @@ updates:
     directory: "/ansible_ai_connect_admin_portal"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0  # disabled — see header
     labels:
       - "dependencies"
       - "javascript"
@@ -43,7 +59,7 @@ updates:
     directory: "/ansible_ai_connect_chatbot"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0  # disabled — see header
     labels:
       - "dependencies"
       - "javascript"
@@ -58,7 +74,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 0  # disabled — see header
     labels:
       - "dependencies"
       - "github-actions"
