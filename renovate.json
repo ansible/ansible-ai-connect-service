@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>ansible-automation-platform/aap-konflux-pipelines//renovate/default.json"
+  ],
+  "packageRules": [
+    {
+      "description": "requirements.txt is GENERATED, not a manifest. Its header says so: `uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt`. The pip_requirements manager treats it as hand-editable and opens PRs that change only that file, leaving uv.lock behind. Those PRs cannot pass the wisdom-service uv-export gate under any circumstances: the gate re-runs `uv lock && uv export` and finds the version the lock still holds. Seen on #2177 (prompt-toolkit 3.0.53 committed, 3.0.52 regenerated) and #2180 (typing-inspection 0.4.4). `uv lock` never rescues them either -- it only makes the lock satisfiable, and the old version already was. The shared default.json disables this manager for the same reason; restated here because this repo resolves through uv rather than pip-compile.",
+      "matchManagers": ["pip_requirements"],
+      "enabled": false
+    }
+  ]
+}
