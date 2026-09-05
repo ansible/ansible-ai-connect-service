@@ -1,0 +1,62 @@
+name: Bot PRs - regenerate uv lockfiles
+
+# requirements.txt is generated from uv.lock by `uv export`. A bot PR that
+# moves one without the other cannot pass the uv-export gate, so regenerate
+# both here and push the result back onto the bot's branch.
+#
+# This previously triggered only on `requirements.in` / `requirements-dev.in`,
+# neither of which exists in this repository, so it never ran. It was also
+# gated to dependabot alone, while MintMaker (red-hat-konflux) opens the PRs
+# that hit this.
+
+on:
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'requirements.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfiles:
+    # Bots only. A human PR that changes these files is deliberate and must not
+    # have commits pushed onto it by CI.
+    if: >-
+      github.actor == 'dependabot[bot]' ||
+      github.actor == 'red-hat-konflux[bot]' ||
+      github.actor == 'konflux-internal-p02[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      # Byte-identical to the gate in uv_export.yml. If the two ever drift,
+      # this workflow starts producing output the gate rejects.
+      - name: Regenerate lockfile and export
+        run: |
+          uv lock
+          uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+
+      - name: Commit regenerated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add uv.lock requirements.txt
+          if git diff --staged --quiet; then
+            echo "Already consistent — nothing to regenerate"
+          else
+            git commit -m "chore: regenerate uv.lock and requirements.txt"
+            git push
+          fi
