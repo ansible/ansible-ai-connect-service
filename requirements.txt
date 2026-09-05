@@ -270,7 +270,7 @@ platformdirs==4.5.1
     # via black
 prometheus-client==0.23.1
     # via django-prometheus
-prompt-toolkit==3.0.52
+prompt-toolkit==3.0.53
     # via ipython
 propcache==0.5.2
     # via
