@@ -34,6 +34,13 @@ class AAPOAuth2(BaseOAuth2PKCE):
 
     PKCE_DEFAULT_CODE_CHALLENGE_METHOD = "S256"
 
+    # Gateway/oauthlib (django-oauth-toolkit) requires an exact string match of
+    # redirect_uri against the registered value, per OAuth 2.0 Security BCP.
+    # BaseOAuth2 defaults to appending "redirect_state" onto redirect_uri, which
+    # breaks that exact match. The state value is still carried via the
+    # separate "state" query parameter (STATE_PARAMETER, unchanged).
+    REDIRECT_STATE = False
+
     name = USER_SOCIAL_AUTH_PROVIDER_AAP
     # SOCIAL_AUTH_AAP_USER_FIELDS
 

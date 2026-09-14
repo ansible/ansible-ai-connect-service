@@ -225,6 +225,26 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         self.assertEqual(params["code_challenge_method"], "S256")
 
     @patch("django.conf.settings.AAP_API_URL", "http://aap.test")
+    def test_auth_params_redirect_uri_excludes_redirect_state(self):
+        backend = AAPOAuth2()
+        session = {}
+        backend.strategy = MagicMock()
+        backend.strategy.setting = lambda name, default=None, **kwargs: default
+        backend.strategy.session_set = lambda k, v: session.__setitem__(k, v)
+        backend.strategy.session_get = lambda k, d=None: session.get(k, d)
+        backend.strategy.random_string = lambda n: "a" * n
+        backend.get_key_and_secret = MagicMock(return_value=("id", "secret"))
+        backend.redirect_uri = "https://lightspeed.test/complete/aap/"
+
+        params = backend.auth_params(state="test-state")
+
+        # Gateway requires an exact match of redirect_uri against the registered
+        # value, so it must not be mutated with a "redirect_state" query param.
+        self.assertEqual(params["redirect_uri"], "https://lightspeed.test/complete/aap/")
+        # The state must still round-trip via the separate "state" parameter.
+        self.assertEqual(params["state"], "test-state")
+
+    @patch("django.conf.settings.AAP_API_URL", "http://aap.test")
     def test_auth_complete_params_include_pkce_verifier(self):
         backend = AAPOAuth2()
         session = {"aap_code_verifier": "test-verifier"}
