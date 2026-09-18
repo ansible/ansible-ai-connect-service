@@ -1,0 +1,88 @@
+name: stable - dependency refresh
+
+# Weekly, downstream only. For each stable branch: move django-ansible-base to the tip of
+# the branch .gitmodules names, apply the lowest fixed version for anything pip-audit
+# flags, regenerate the locked files, and open (or update) one pull request.
+# The logic lives in tools/scripts/stable_deps_refresh.py; see its docstring.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    # This file syncs from upstream main to the downstream mirror; only the mirror has
+    # stable branches and the app credentials.
+    if: github.repository_owner == 'ansible-automation-platform'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        branch:
+          - stable-2.6
+          - stable-2.7
+    concurrency:
+      group: stable-deps-refresh-${{ matrix.branch }}
+    steps:
+      - name: Generate a token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.ANSIBLE_CICD_BOT_ORG_RW_TOKEN_APP_ID }}
+          private-key: ${{ secrets.ANSIBLE_CICD_BOT_ORG_RW_TOKEN_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            ansible-wisdom-service
+            django-ansible-base
+          permission-contents: write
+          permission-pull-requests: write
+
+      # The script lives on the default branch, not on the stable branches it refreshes.
+      - name: Check out the refresh script
+        uses: actions/checkout@v7
+        with:
+          path: tooling
+          sparse-checkout: tools/scripts
+          persist-credentials: false
+
+      - name: Check out ${{ matrix.branch }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ matrix.branch }}
+          path: target
+          token: ${{ steps.app-token.outputs.token }}
+          submodules: recursive
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Refresh
+        working-directory: target
+        run: >-
+          uv run --no-project --with packaging python
+          ../tooling/tools/scripts/stable_deps_refresh.py
+          --summary "${{ runner.temp }}/summary.md"
+
+      - name: Open or update the pull request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          path: target
+          token: ${{ steps.app-token.outputs.token }}
+          base: ${{ matrix.branch }}
+          branch: automation/${{ matrix.branch }}-deps-refresh
+          delete-branch: true
+          add-paths: |
+            django-ansible-base
+            uv.lock
+            requirements.txt
+            requirements-build.txt
+          commit-message: "chore(deps): refresh django-ansible-base and audited dependencies"
+          title: "[Automated PR] ${{ matrix.branch }}: refresh django-ansible-base and dependencies"
+          body-path: ${{ runner.temp }}/summary.md
