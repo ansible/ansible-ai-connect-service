@@ -82,9 +82,20 @@ def lowest_fix(current, vulns):
     return max(targets)
 
 
+def move_dab():
+    """Check out the tip of the branch .gitmodules names for django-ansible-base.
+
+    Not `git submodule update --remote`: actions/checkout clones submodules shallow, and a
+    shallow clone tracks only the default branch, so origin/<branch> would not exist.
+    """
+    branch = git("config", "-f", ".gitmodules", f"submodule.{DAB}.branch")
+    run(["git", "-C", DAB, "fetch", "--depth=1", "origin", branch])
+    run(["git", "-C", DAB, "checkout", "--detach", "FETCH_HEAD"])
+
+
 def refresh():
     old_dab = git("rev-parse", f"HEAD:{DAB}")
-    run(["git", "submodule", "update", "--remote", DAB])
+    move_dab()
     new_dab = git("-C", DAB, "rev-parse", "HEAD")
 
     before = locked_versions()
@@ -127,11 +138,14 @@ def refresh():
 
 
 def describe(sha):
-    try:
-        tag = git("-C", DAB, "describe", "--tags", "--exact-match", sha)
-    except subprocess.CalledProcessError:
-        tag = ""
-    return f"`{sha[:8]}`" + (f" ({tag})" if tag else "")
+    # ls-remote, not `git describe`: the shallow submodule clone has no tags.
+    refs = git("-C", DAB, "ls-remote", "--tags", "origin").splitlines()
+    tags = sorted(
+        ref.split("refs/tags/")[1].removesuffix("^{}")
+        for ref in refs
+        if ref.startswith(sha) and "refs/tags/" in ref
+    )
+    return f"`{sha[:8]}`" + (f" ({', '.join(dict.fromkeys(tags))})" if tags else "")
 
 
 def summarize(r):
