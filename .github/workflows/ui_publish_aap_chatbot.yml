@@ -3,6 +3,13 @@ name: AAP Chatbot - Publish
 on:
   workflow_dispatch:
 
+# Publishing uses npm trusted publishing (OIDC): npm exchanges this token with
+# the registry instead of a long-lived NPM_TOKEN. The trusted publisher on npmjs
+# must name this repository and this workflow file.
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
 
   lint:
@@ -18,7 +25,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '18.x'
+          node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
           cache-dependency-path: ${{env.WORKING_DIRECTORY}}/package-lock.json
@@ -43,8 +50,11 @@ jobs:
         run: npm pack
         working-directory: ${{env.WORKING_DIRECTORY}}
 
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
+
       - name: Publish to npmjs
         run: npm publish --access public
         working-directory: ${{env.WORKING_DIRECTORY}}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
