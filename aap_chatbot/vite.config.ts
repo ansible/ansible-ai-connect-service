@@ -27,7 +27,9 @@ export default defineConfig({
     browser: {
       enabled: true,
       provider: playwright(),
-      instances: [{ browser: "chromium", viewport: { width: 1920, height: 1080 } }],
+      instances: [
+        { browser: "chromium", viewport: { width: 1920, height: 1080 } },
+      ],
     },
     setupFiles: "./src/setupTests.ts",
     coverage: {
