@@ -53,8 +53,9 @@
     "@types/node": "^22.13.1",
     "@types/react": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.1",
-    "@vitest/browser": "^3.0.7",
-    "@vitest/coverage-v8": "^3.0.7",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-patternfly-react": "^5.4.0",
@@ -74,8 +75,8 @@
     "vite-plugin-clean": "^2.0.1",
     "vite-plugin-dts": "^4.5.0",
     "vite-plugin-static-copy": "^2.3.1",
-    "vitest": "^3.0.7",
-    "vitest-browser-react": "^0.0.4",
+    "vitest": "^4.1.11",
+    "vitest-browser-react": "^2.3.0",
     "web-vitals": "^2.1.4"
   },
   "overrides": {
@@ -88,6 +89,7 @@
     "baseline-browser-mapping": ">=2.11.0",
     "browserslist": ">=4.28.7",
     "fflate": ">=0.4.9 <0.5.0",
-    "js-yaml": ">=4.3.2 <5"
+    "js-yaml": ">=4.3.2 <5",
+    "@vitest/mocker": ">=4.1.11 <5"
   }
 }

@@ -4,6 +4,7 @@ import dts from "vite-plugin-dts";
 import react from "@vitejs/plugin-react";
 import cleanPlugin from "vite-plugin-clean";
 import { viteStaticCopy } from "vite-plugin-static-copy";
+import { playwright } from "@vitest/browser-playwright";
 
 // https://vitejs.dev/guide/build.html#library-mode
 export default defineConfig({
@@ -24,10 +25,9 @@ export default defineConfig({
   },
   test: {
     browser: {
-      name: "chromium",
       enabled: true,
-      provider: "playwright",
-      viewport: { width: 1920, height: 1080 },
+      provider: playwright(),
+      instances: [{ browser: "chromium", viewport: { width: 1920, height: 1080 } }],
     },
     setupFiles: "./src/setupTests.ts",
     coverage: {
