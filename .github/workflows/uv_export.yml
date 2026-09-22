@@ -5,22 +5,10 @@ on:
     branches:
       - main
       - 'stable-*'
-    paths:
-      - ansible_ai_connect/**
-      - pyproject.toml
-      - uv.lock
-      - requirements.txt
-      - Makefile
   pull_request:
     branches:
       - main
       - 'stable-*'
-    paths:
-      - ansible_ai_connect/**
-      - pyproject.toml
-      - uv.lock
-      - requirements.txt
-      - Makefile
 permissions:
   contents: read
 
