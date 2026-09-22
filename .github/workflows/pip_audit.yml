@@ -27,7 +27,7 @@ permissions:
   contents: read
 
 jobs:
-  selftest:
+  pip-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

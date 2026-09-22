@@ -6,7 +6,7 @@ queue_rules:
     merge_conditions:
       - check-success=pre-commit
       - check-success=Unit Test and SonarCloud Scan
-      - check-success=selftest
+      - check-success=uv-export
 
   - name: ansible-ai-connect-service-admin-portal
     queue_conditions:
@@ -39,7 +39,7 @@ pull_request_rules:
       - label=security
       - label=python
       - check-success=pre-commit
-      - check-success=selftest  # pip_compile check
+      - check-success=uv-export  # dependency freshness
       - "#changes-requested-reviews-by=0"
       - "#review-requested=0"
     actions:
