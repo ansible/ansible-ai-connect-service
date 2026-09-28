@@ -75,6 +75,9 @@ jobs:
         with:
           path: target
           token: ${{ steps.app-token.outputs.token }}
+          # Verified commits via GitHub App signing (required by org rules).
+          # Default is unsigned local git commits; see peter-evans/create-pull-request docs.
+          sign-commits: true
           base: ${{ matrix.branch }}
           branch: automation/${{ matrix.branch }}-deps-refresh
           delete-branch: true
