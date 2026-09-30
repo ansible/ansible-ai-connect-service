@@ -47,5 +47,4 @@ jobs:
           audit_level: low
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_issues: false
-          create_pr_comments: false
           working_directory: ${{env.WORKING_DIRECTORY}}
