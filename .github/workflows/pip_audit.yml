@@ -69,3 +69,18 @@ jobs:
             # See: https://osv.dev/vulnerability/CVE-2026-73229
             CVE-2026-73228
             CVE-2026-73229
+            # social-auth-core 5.0.0 fixes these, but needs social-auth-app-django 6.x
+            # and both are capped (~=4.7.0 / ~=5.6.0) in pyproject.toml. None is
+            # reachable: AUTHENTICATION_BACKENDS enables only OpenIdConnectAuth,
+            # AAPOAuth2 and (optionally) GitHub, and SOCIAL_AUTH_PIPELINE has no
+            # partial steps. Remove once social-auth-core>=5.0.0 lands (review by 2026-12-31).
+            # SAML account association (backend not enabled)
+            CVE-2026-57175
+            # Vend backend (not enabled)
+            CVE-2026-57176
+            # LoginRadius backend (not enabled)
+            CVE-2026-57177
+            # vk-app backend (not enabled)
+            CVE-2026-57178
+            # partial pipeline resume (no partial steps in SOCIAL_AUTH_PIPELINE)
+            CVE-2026-57179
