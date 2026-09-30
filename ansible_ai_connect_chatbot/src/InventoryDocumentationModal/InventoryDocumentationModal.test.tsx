@@ -4,11 +4,11 @@ import { expect, test, describe } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import { userEvent, page } from "@vitest/browser/context";
 import { InventoryDocumentationModal } from "./InventoryDocumentationModal";
-import "@vitest/browser/matchers.d.ts";
+import "@vitest/browser/matchers";
 
 describe("InventoryDocumentationModal", () => {
   test("renders the documentation link button", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const button = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",
@@ -21,7 +21,7 @@ describe("InventoryDocumentationModal", () => {
   });
 
   test("button contains external link icon", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const button = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",
@@ -33,7 +33,7 @@ describe("InventoryDocumentationModal", () => {
   });
 
   test("modal opens when button is clicked", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const button = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",
@@ -49,7 +49,7 @@ describe("InventoryDocumentationModal", () => {
   });
 
   test("modal displays main heading with correct title", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const button = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",
@@ -66,7 +66,7 @@ describe("InventoryDocumentationModal", () => {
   });
 
   test("modal can be closed with ESC key (verifying close functionality)", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const openButton = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",
@@ -101,7 +101,7 @@ describe("InventoryDocumentationModal", () => {
   });
 
   test("modal displays lightspeed icon in header", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const button = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",
@@ -132,7 +132,7 @@ describe("InventoryDocumentationModal", () => {
   });
 
   test("modal header contains proper description", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const button = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",
@@ -147,7 +147,7 @@ describe("InventoryDocumentationModal", () => {
   });
 
   test("modal content is scrollable for long content", async () => {
-    render(<InventoryDocumentationModal />);
+    await render(<InventoryDocumentationModal />);
 
     const button = screen.getByRole("button", {
       name: "Generate Inventory File User Documentation",

@@ -16,7 +16,7 @@ import { App } from "./App";
 import { ColorThemeSwitch } from "./ColorThemeSwitch/ColorThemeSwitch";
 import { userEvent, page } from "@vitest/browser/context";
 // See: https://github.com/vitest-dev/vitest/issues/6965
-import "@vitest/browser/matchers.d.ts";
+import "@vitest/browser/matchers";
 import { conversationStore } from "./AnsibleChatbot/AnsibleChatbot";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
