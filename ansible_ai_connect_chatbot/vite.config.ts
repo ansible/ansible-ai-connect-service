@@ -2,6 +2,7 @@
 /// <reference types="vite/client" />
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { playwright } from "@vitest/browser-playwright";
 import { configDefaults } from "vitest/config";
 
 export default defineConfig({
@@ -24,10 +25,11 @@ export default defineConfig({
   },
   test: {
     browser: {
-      name: "chromium",
       enabled: true,
-      provider: "playwright",
-      viewport: { width: 1920, height: 1080 },
+      provider: playwright(),
+      instances: [
+        { browser: "chromium", viewport: { width: 1920, height: 1080 } },
+      ],
     },
     setupFiles: "./src/setupTests.ts",
     coverage: {

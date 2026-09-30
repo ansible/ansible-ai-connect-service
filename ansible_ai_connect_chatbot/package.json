@@ -7,7 +7,7 @@
     "@patternfly/chatbot": "^6.5.0",
     "@patternfly/react-core": "^6.0.0",
     "@patternfly/react-icons": "^6.0.0",
-    "@types/node": "^18.0.0",
+    "@types/node": "^22.13.1",
     "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -46,14 +46,16 @@
     "js-cookie": ">=3.0.6",
     "baseline-browser-mapping": ">=2.11.0",
     "browserslist": ">=4.28.7",
-    "fflate": ">=0.4.9 <0.5.0"
+    "fflate": ">=0.4.9 <0.5.0",
+    "@vitest/mocker": ">=4.1.11 <5"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.1",
     "@eslint/js": "^9.13.0",
     "@testing-library/react": "^16.2.0",
-    "@vitest/browser": "^3.2.7",
-    "@vitest/coverage-v8": "^3.2.7",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.11",
     "buffer": "^6.0.3",
     "empty-module": "^0.0.2",
     "eslint": "^9.13.0",
@@ -70,7 +72,7 @@
     "sass-embedded": "^1.79.1",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.24.0",
-    "vitest": "^3.2.7",
-    "vitest-browser-react": "^0.0.4"
+    "vitest": "^4.1.11",
+    "vitest-browser-react": "^2.3.0"
   }
 }

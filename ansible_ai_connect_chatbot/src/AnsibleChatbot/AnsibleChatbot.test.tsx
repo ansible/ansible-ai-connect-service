@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { screen } from "@testing-library/react";
 import { userEvent } from "@vitest/browser/context";
 import { AnsibleChatbot } from "./AnsibleChatbot";
-import "@vitest/browser/matchers.d.ts";
+import "@vitest/browser/matchers";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
