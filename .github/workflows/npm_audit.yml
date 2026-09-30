@@ -1,6 +1,11 @@
 name: Admin Portal - npm-audit
 
 on:
+  # Daily on main, so a newly published advisory shows up the day it lands
+  # instead of on the next PR that happens to touch these paths.
+  schedule:
+    - cron: "20 7 * * *"
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -42,4 +47,5 @@ jobs:
           audit_level: low
           github_token: ${{ secrets.GITHUB_TOKEN }}
           create_issues: false
+          create_pr_comments: false
           working_directory: ${{env.WORKING_DIRECTORY}}
