@@ -1,6 +1,11 @@
 name: wisdom-service - pip-audit
 
 on:
+  # Daily on main, so a newly published advisory shows up the day it lands
+  # instead of on the next PR that happens to touch these paths.
+  schedule:
+    - cron: "30 7 * * *"
+  workflow_dispatch:
   push:
     # tags:
     #   - v*
