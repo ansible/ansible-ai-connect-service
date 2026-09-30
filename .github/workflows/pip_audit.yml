@@ -84,3 +84,10 @@ jobs:
             CVE-2026-57178
             # partial pipeline resume (no partial steps in SOCIAL_AUTH_PIPELINE)
             CVE-2026-57179
+            # oauthlib 4.0.0 fixes this PKCE code_verifier timing leak, but is a major
+            # bump under django-oauth-toolkit and needs its own PR. Not practically
+            # exploitable: our VS Code client uses S256, where the leak reveals at most
+            # the already-public code_challenge, and codes are single-use with a 60s
+            # lifetime. Remove once oauthlib>=4.0.0 lands (review by 2026-12-31).
+            # See: https://osv.dev/vulnerability/CVE-2026-49265
+            CVE-2026-49265
