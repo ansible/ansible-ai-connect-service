@@ -314,7 +314,7 @@ pydrive2==1.20.0
     # via ansible-ai-connect
 pygments==2.20.0
     # via ipython
-pyjwt==2.13.0
+pyjwt==2.15.1
     # via
     #   django-ansible-base
     #   social-auth-core
