@@ -73,9 +73,6 @@ class HttpMetaData(MetaData[HttpConfiguration]):
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
-    def task_gen_timeout(self, task_count=1):
-        return self._timeout * task_count if self._timeout else None
-
 
 @Register(api_type="http")
 class HttpCompletionsPipeline(HttpMetaData, ModelPipelineCompletions[HttpConfiguration]):

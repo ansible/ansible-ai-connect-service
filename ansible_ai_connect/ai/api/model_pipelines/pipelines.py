@@ -39,6 +39,8 @@ RoleGenerationResponse = tuple[
 
 logger = logging.getLogger(__name__)
 
+MAX_TASK_GEN_TIMEOUT_MULTIPLIER = 5
+
 
 @define
 class CompletionsParameters:
@@ -299,6 +301,10 @@ class MetaData(Generic[PIPELINE_CONFIGURATION], metaclass=ABCMeta):
 
     def get_model_id(self, user, requested_model_id: Optional[str] = None) -> str:
         return requested_model_id or self.config.model_id
+
+    def task_gen_timeout(self, task_count=1):
+        timeout = getattr(self, "_timeout", None)
+        return timeout * min(task_count, MAX_TASK_GEN_TIMEOUT_MULTIPLIER) if timeout else None
 
 
 class ModelPipeline(
