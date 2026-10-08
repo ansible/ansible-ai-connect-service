@@ -825,10 +825,12 @@ components:
           type: string
           description: An ID that identifies the particular conversation is being
             requested for.
+          maxLength: 64
         query:
           type: string
           title: Query string
           description: A query string to be sent to LLM.
+          maxLength: 8192
         model:
           type: string
           title: Model name
@@ -1509,10 +1511,12 @@ components:
           type: string
           description: An ID that identifies the particular conversation is being
             requested for.
+          maxLength: 64
         query:
           type: string
           title: Query string
           description: A query string to be sent to LLM.
+          maxLength: 8192
         model:
           type: string
           title: Model name
