@@ -66,7 +66,6 @@ COPY ansible_ai_connect_admin_portal/src /tmp/ansible_ai_connect_admin_portal/sr
 COPY ansible_ai_connect_admin_portal/package.json /tmp/ansible_ai_connect_admin_portal/package.json
 COPY ansible_ai_connect_admin_portal/package-lock.json /tmp/ansible_ai_connect_admin_portal/package-lock.json
 COPY ansible_ai_connect_admin_portal/tsconfig.json /tmp/ansible_ai_connect_admin_portal/tsconfig.json
-RUN cd /tmp/ansible_ai_connect_admin_portal && npx update-browserslist-db@latest
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal ci
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal run build
 
@@ -78,7 +77,7 @@ COPY ansible_ai_connect_chatbot/package.json /tmp/ansible_ai_connect_chatbot/pac
 COPY ansible_ai_connect_chatbot/package-lock.json /tmp/ansible_ai_connect_chatbot/package-lock.json
 COPY ansible_ai_connect_chatbot/tsconfig.json /tmp/ansible_ai_connect_chatbot/tsconfig.json
 COPY ansible_ai_connect_chatbot/vite.config.ts /tmp/ansible_ai_connect_chatbot/vite.config.ts
-RUN npm --prefix /tmp/ansible_ai_connect_chatbot install
+RUN npm --prefix /tmp/ansible_ai_connect_chatbot ci
 RUN ln -s /var/www/ansible-ai-connect-service/ansible_ai_connect /tmp/ansible_ai_connect
 RUN npm --prefix /tmp/ansible_ai_connect_chatbot run build
 RUN unlink /tmp/ansible_ai_connect
