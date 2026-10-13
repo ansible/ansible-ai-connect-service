@@ -12,12 +12,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import base64
+import json
 import logging
 
 import jwt
+import requests
 from django.conf import settings
 from rest_framework import authentication
+from rest_framework.exceptions import AuthenticationFailed
 from social_core.backends.oauth import BaseOAuth2PKCE
+from social_core.exceptions import AuthException
 from social_django.models import UserSocialAuth
 from social_django.utils import load_backend, load_strategy
 
@@ -96,26 +101,58 @@ class AAPOAuth2(BaseOAuth2PKCE):
 class RHSSOAuthentication(authentication.BaseAuthentication):
     """Red Hat SSO Access Token authentication backend"""
 
+    @staticmethod
+    def _reject(reason):
+        """Reject an RHSSO credential without logging token contents."""
+        logger.warning("RHSSO authentication failed: %s", reason)
+        raise AuthenticationFailed("Invalid RHSSO access token")
+
+    @staticmethod
+    def _unverified_jwt_claims(access_token):
+        """Parse JWT payload claims without verifying the signature.
+
+        Used only to decide whether this backend should handle the token
+        (issuer routing). Never treat these claims as authenticated identity.
+        """
+        try:
+            payload_segment = access_token.split(".")[1]
+            padded = payload_segment + "=" * (-len(payload_segment) % 4)
+            claims = json.loads(base64.urlsafe_b64decode(padded))
+        except (IndexError, ValueError) as e:
+            # JSONDecodeError and binascii.Error both subclass ValueError.
+            raise jwt.DecodeError("Not a JWT") from e
+        if not isinstance(claims, dict):
+            raise jwt.DecodeError("JWT payload is not an object")
+        return claims
+
     # This function works for validating the access token and
     # identifying an existing user. It doesn't work if user doesn't exist yet.
     def _auth_existing_user(self, access_token, request):
         strategy = load_strategy()
         backend = load_backend(strategy, "oidc", redirect_uri=None)
         key = backend.find_valid_key(access_token)
+        if key is None:
+            self._reject("signature verification failed")
+
         rsakey = jwt.PyJWK(key)
 
         # Decode and verify access token using extracted public key
-        decoded_token = jwt.decode(
-            access_token,
-            rsakey.key,
-            algorithms=["RS256"],
-            issuer=backend.id_token_issuer(),
-            audience=RHSSO_LIGHTSPEED_SCOPE,
-        )
+        try:
+            decoded_token = jwt.decode(
+                access_token,
+                rsakey.key,
+                algorithms=["RS256"],
+                issuer=backend.id_token_issuer(),
+                audience=RHSSO_LIGHTSPEED_SCOPE,
+            )
+        except jwt.InvalidTokenError as e:
+            # Includes expiry, issuer, audience, signature, and malformed-claim
+            # failures. Keep these distinct from a token this backend cannot parse.
+            self._reject(type(e).__name__)
 
         scope = decoded_token.get("scope")
-        if RHSSO_LIGHTSPEED_SCOPE not in scope.split():
-            raise ValueError(f"Unexpected scope: {scope}")
+        if not isinstance(scope, str) or RHSSO_LIGHTSPEED_SCOPE not in scope.split():
+            self._reject("required scope is missing")
 
         social_user_id = decoded_token.get("sub")
         try:
@@ -137,24 +174,63 @@ class RHSSOAuthentication(authentication.BaseAuthentication):
         if cred_type.lower() != "bearer":
             return None  # Wrong token type
 
+        # On-prem and other deployments leave RHSSO unset. Nothing presented
+        # here can be an RHSSO credential, and resolving the issuer would call
+        # discovery with a missing endpoint.
+        if not settings.SOCIAL_AUTH_OIDC_OIDC_ENDPOINT:
+            return None
+
+        # Foreign JWTs (e.g. K8s/OpenShift SA tokens on AllowAny /metrics) must
+        # not be treated as failed RHSSO credentials. Inspect iss without
+        # verifying the signature; only tokens that claim our issuer get the
+        # fail-closed validation path below.
+        try:
+            unverified_claims = self._unverified_jwt_claims(access_token)
+        except jwt.DecodeError:
+            return None
+
+        strategy = load_strategy()
+        backend = load_backend(strategy, "oidc", redirect_uri=None)
+        try:
+            issuer = backend.id_token_issuer()
+        except (AuthException, requests.RequestException) as e:
+            # Discovery down or issuer not configured. We cannot claim the
+            # token; leave it for the view's permissions.
+            logger.warning("RHSSO issuer could not be established: %s", type(e).__name__)
+            return None
+
+        if unverified_claims.get("iss") != issuer:
+            return None
+
         try:
             existing_user, user_data = self._auth_existing_user(access_token, request)
-        except Exception as e:
-            logger.info(e)
-            return None  # Problem decoding
+        except jwt.InvalidSignatureError:
+            # Safety net: not reachable with current social-core/PyJWT
+            # (find_valid_key returns None on bad sig; jwt.decode errors are
+            # caught inside _auth_existing_user). Kept because
+            # InvalidSignatureError subclasses DecodeError and must not fall
+            # through to "try next backend."
+            self._reject("signature verification failed")
+        except jwt.DecodeError:
+            # The token is not a decodable JWT for this backend. Let the rest of
+            # the configured authentication chain decide whether it applies.
+            return None
 
         if existing_user:
             return (existing_user, None)
 
-        # Create the user if he doesn't exist.
-        # TODO - Consider always going through create flow if it's not
-        # too slow. This will pick up changes in username and RH admin as well.
+        # Create the user from the already-validated token through the normal
+        # social-auth pipeline. Passing the response directly avoids replacing
+        # a method on the backend instance.
         strategy = load_strategy()
         backend = load_backend(strategy, "oidc", redirect_uri=None)
+        response = {**user_data, "access_token": access_token}
         try:
-            backend.user_data = lambda _: user_data
-            user = backend.do_auth(access_token)
-            return (user, None)
-        except Exception as e:
-            logger.info(e)
-            return None
+            user = backend.strategy.authenticate(backend, response=response)
+        except AuthException as e:
+            self._reject(type(e).__name__)
+
+        if user is None:
+            self._reject("user provisioning did not return a user")
+
+        return (user, None)

@@ -21,8 +21,10 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.contrib.auth import get_user_model
 from django.test import override_settings
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.test import APIRequestFactory
 from social_core.backends.open_id_connect import OpenIdConnectAuth
+from social_core.exceptions import AuthException
 from social_django.models import UserSocialAuth
 from social_django.utils import load_strategy
 
@@ -51,9 +53,10 @@ class DummyRHBackend(OpenIdConnectAuth):
 
 
 def build_access_token(private_key, issuer, payload, scope=None):
-    payload["aud"] = RHSSO_LIGHTSPEED_SCOPE
-    payload["scope"] = scope if scope else RHSSO_LIGHTSPEED_SCOPE
-    payload["iss"] = issuer
+    payload = payload.copy()
+    payload.setdefault("aud", RHSSO_LIGHTSPEED_SCOPE)
+    payload.setdefault("scope", scope if scope else RHSSO_LIGHTSPEED_SCOPE)
+    payload.setdefault("iss", issuer)
     return jwt.encode(payload, key=private_key, algorithm="RS256")
 
 
@@ -240,6 +243,9 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         self.assertEqual(params["code_verifier"], "test-verifier")
 
 
+@override_settings(
+    SOCIAL_AUTH_OIDC_OIDC_ENDPOINT="https://sso.example.com/auth/realms/redhat-external"
+)
 class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
@@ -252,6 +258,20 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         self.rh_usa = UserSocialAuth.objects.create(
             user=self.rh_user, provider="oidc", uid=str(uuid4())
         )
+
+    def test_unverified_jwt_claims_parses_payload_without_crypto(self):
+        backend = DummyRHBackend()
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={"sub": self.rh_usa.uid},
+        )
+        claims = RHSSOAuthentication._unverified_jwt_claims(access_token)
+        self.assertEqual(claims["iss"], backend.issuer)
+        self.assertEqual(claims["sub"], self.rh_usa.uid)
+
+        with self.assertRaises(jwt.DecodeError):
+            RHSSOAuthentication._unverified_jwt_claims("not-a-jwt")
 
     @patch("ansible_ai_connect.users.auth.load_backend")
     def test_authenticate_returns_existing_user(self, mock_load_backend):
@@ -285,7 +305,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         self.assertEqual(user.id, self.rh_user.id)
 
     @patch("ansible_ai_connect.users.auth.load_backend")
-    def test_authenticate_returns_none_on_invalid_scope(self, mock_load_backend):
+    def test_authenticate_rejects_invalid_scope(self, mock_load_backend):
         backend = DummyRHBackend()
         mock_load_backend.return_value = backend
         access_token = build_access_token(
@@ -296,7 +316,217 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         )
 
         request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+        with self.assertLogs("auth", level="WARNING") as logs:
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
+        self.assertNotIn(access_token, "\n".join(logs.output))
+
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    def test_authenticate_rejects_invalid_token_claims(self, mock_load_backend):
+        token_cases = [
+            ("expired", {"exp": int(datetime.now().timestamp()) - 600}),
+            ("wrong audience", {"aud": "another-service"}),
+        ]
+
+        with self.assertLogs("auth", level="WARNING"):
+            for name, claims in token_cases:
+                with self.subTest(name=name):
+                    backend = DummyRHBackend()
+                    mock_load_backend.return_value = backend
+                    access_token = build_access_token(
+                        private_key=backend.rsa_private_key,
+                        issuer=backend.issuer,
+                        payload={"sub": self.rh_usa.uid, **claims},
+                    )
+                    request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+                    with self.assertRaises(AuthenticationFailed):
+                        self.authentication.authenticate(request)
+
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    def test_authenticate_returns_none_for_foreign_issuer_jwt(self, mock_load_backend):
+        # Non-RHSSO JWTs (e.g. Prometheus SA tokens) must fall through so
+        # AllowAny endpoints stay reachable; do not hit JWKS validation.
+        backend = DummyRHBackend()
+        backend.find_valid_key = Mock(return_value=None)
+        mock_load_backend.return_value = backend
+        other_private_key = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048, backend=default_backend()
+        )
+        access_token = build_access_token(
+            private_key=other_private_key,
+            issuer="https://kubernetes.default.svc",
+            payload={"sub": "system:serviceaccount:monitoring:prometheus"},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
         self.assertIsNone(self.authentication.authenticate(request))
+        backend.find_valid_key.assert_not_called()
+
+    @override_settings(SOCIAL_AUTH_OIDC_OIDC_ENDPOINT=None)
+    def test_authenticate_returns_none_when_rhsso_is_not_configured(self):
+        # load_backend is intentionally not mocked: an unset endpoint must
+        # return before discovery, which otherwise raises TypeError.
+        private_key = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048, backend=default_backend()
+        )
+        access_token = build_access_token(
+            private_key=private_key,
+            issuer="https://kubernetes.default.svc",
+            payload={"sub": "system:serviceaccount:monitoring:prometheus"},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        self.assertIsNone(self.authentication.authenticate(request))
+
+    @override_settings(SOCIAL_AUTH_OIDC_OIDC_ENDPOINT="http://127.0.0.1:1")
+    def test_authenticate_returns_none_when_oidc_discovery_is_unreachable(self):
+        OpenIdConnectAuth.oidc_config.invalidate()
+        private_key = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048, backend=default_backend()
+        )
+        access_token = build_access_token(
+            private_key=private_key,
+            issuer="https://kubernetes.default.svc",
+            payload={"sub": "system:serviceaccount:monitoring:prometheus"},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        try:
+            with self.assertLogs("auth", level="WARNING"):
+                self.assertIsNone(self.authentication.authenticate(request))
+        finally:
+            OpenIdConnectAuth.oidc_config.invalidate()
+
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    def test_authenticate_rejects_token_without_matching_signing_key(self, mock_load_backend):
+        backend = DummyRHBackend()
+        backend.find_valid_key = Mock(return_value=None)
+        mock_load_backend.return_value = backend
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={"sub": self.rh_usa.uid},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        with self.assertLogs("auth", level="WARNING"):
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
+
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    def test_authenticate_rejects_bad_signature(self, mock_load_backend):
+        backend = DummyRHBackend()
+        other_private_key = rsa.generate_private_key(
+            public_exponent=65537, key_size=2048, backend=default_backend()
+        )
+        mock_load_backend.return_value = backend
+        access_token = build_access_token(
+            private_key=other_private_key,
+            issuer=backend.issuer,
+            payload={"sub": self.rh_usa.uid},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        with self.assertLogs("auth", level="WARNING"):
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
+
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    def test_authenticate_returns_none_for_undecodable_non_rhsso_token(self, mock_load_backend):
+        backend = DummyRHBackend()
+        backend.find_valid_key = Mock(side_effect=jwt.DecodeError("not a JWT"))
+        mock_load_backend.return_value = backend
+        request = Mock(headers={"Authorization": "Bearer opaque-token"})
+
+        self.assertIsNone(self.authentication.authenticate(request))
+
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    def test_authenticate_does_not_swallow_unexpected_errors(self, mock_load_backend):
+        backend = DummyRHBackend()
+        backend.find_valid_key = Mock(side_effect=RuntimeError("JWKS service unavailable"))
+        mock_load_backend.return_value = backend
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={"sub": self.rh_usa.uid},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        with self.assertRaisesRegex(RuntimeError, "JWKS service unavailable"):
+            self.authentication.authenticate(request)
+
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    def test_authenticate_rejects_invalid_signature_raised_before_decode(self, mock_load_backend):
+        # Safety net: InvalidSignatureError subclasses DecodeError, so it must
+        # be rejected rather than falling through to "try next backend."
+        backend = DummyRHBackend()
+        backend.find_valid_key = Mock(
+            side_effect=jwt.InvalidSignatureError("signature verification failed")
+        )
+        mock_load_backend.return_value = backend
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={"sub": self.rh_usa.uid},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        with self.assertLogs("auth", level="WARNING"):
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    @patch("ansible_ai_connect.users.auth.UserSocialAuth.objects.get")
+    def test_authenticate_rejects_auth_exception_during_user_provisioning(
+        self, mock_get_social_user, mock_load_backend
+    ):
+        backend = DummyRHBackend()
+        backend.strategy = load_strategy()
+        mock_load_backend.return_value = backend
+        mock_get_social_user.side_effect = UserSocialAuth.DoesNotExist
+        backend.strategy.authenticate = Mock(side_effect=AuthException(backend, "pipeline failed"))
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={
+                "sub": "unknown-user",
+                "organization": {"id": "999"},
+                "preferred_username": "joe-new-user",
+            },
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        with self.assertLogs("auth", level="WARNING"):
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    @patch("ansible_ai_connect.users.auth.UserSocialAuth.objects.get")
+    def test_authenticate_rejects_when_user_provisioning_returns_none(
+        self, mock_get_social_user, mock_load_backend
+    ):
+        backend = DummyRHBackend()
+        backend.strategy = load_strategy()
+        mock_load_backend.return_value = backend
+        mock_get_social_user.side_effect = UserSocialAuth.DoesNotExist
+        backend.strategy.authenticate = Mock(return_value=None)
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={
+                "sub": "unknown-user",
+                "organization": {"id": "999"},
+                "preferred_username": "joe-new-user",
+            },
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        with self.assertLogs("auth", level="WARNING"):
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
 
     def test_authenticate_returns_none_on_invalid_auth_header(self):
         backend = DummyRHBackend()
@@ -335,6 +565,31 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         user, _ = self.authentication.authenticate(request)
 
         self.assertEqual(user.external_username, "joe-new-user")
+        self.assertNotIn("user_data", backend.__dict__)
+
+    @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
+    @patch("ansible_ai_connect.users.auth.load_backend")
+    @patch("ansible_ai_connect.users.auth.UserSocialAuth.objects.get")
+    def test_new_user_with_invalid_audience_is_rejected_before_provisioning(
+        self, mock_get_social_user, mock_load_backend
+    ):
+        backend = DummyRHBackend()
+        backend.strategy = load_strategy()
+        mock_load_backend.return_value = backend
+        mock_get_social_user.side_effect = UserSocialAuth.DoesNotExist
+        backend.strategy.authenticate = Mock()
+        access_token = build_access_token(
+            private_key=backend.rsa_private_key,
+            issuer=backend.issuer,
+            payload={"sub": "unknown-user", "aud": "another-service"},
+        )
+        request = Mock(headers={"Authorization": f"Bearer {access_token}"})
+
+        with self.assertLogs("auth", level="WARNING"):
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
+
+        backend.strategy.authenticate.assert_not_called()
 
     @override_settings(ANSIBLE_AI_ENABLE_TECH_PREVIEW=False)
     @patch("ansible_ai_connect.users.auth.load_backend")
@@ -354,4 +609,6 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
         )
 
         request = Mock(headers={"Authorization": f"Bearer {access_token}"})
-        self.assertEqual(self.authentication.authenticate(request), None)
+        with self.assertLogs("auth", level="WARNING"):
+            with self.assertRaises(AuthenticationFailed):
+                self.authentication.authenticate(request)
