@@ -1,5 +1,8 @@
 name: Admin Portal - npm-audit
 
+permissions:
+  contents: read
+
 on:
   # Daily on main, so a newly published advisory shows up the day it lands
   # instead of on the next PR that happens to touch these paths.
