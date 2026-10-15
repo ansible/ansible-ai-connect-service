@@ -145,6 +145,7 @@ class TestWCABaseMetaDataSSL(SimpleTestCase):
         self.assertEqual(metadata.task_gen_timeout(1), 30)
         self.assertEqual(metadata.task_gen_timeout(2), 60)
         self.assertEqual(metadata.task_gen_timeout(3), 90)
+        self.assertEqual(metadata.task_gen_timeout(10), 150)
 
     @patch("ansible_ai_connect.ai.api.model_pipelines.wca.pipelines_base.ssl_manager")
     def test_task_gen_timeout_with_none_timeout(self, mock_ssl_manager):
