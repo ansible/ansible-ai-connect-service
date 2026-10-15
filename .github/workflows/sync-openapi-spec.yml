@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Determine target branch in spec repo
         id: branch_mapping
@@ -75,7 +75,7 @@ jobs:
           echo "📍 Source branch: $SOURCE_BRANCH → Target branch: $TARGET_BRANCH"
 
       - name: Setup Python 3.12
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
 
@@ -108,7 +108,7 @@ jobs:
           echo "✅ Found spec file at $SPEC_FILE"
 
       - name: Checkout spec repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: ansible-automation-platform/aap-openapi-specs
           ref: ${{ steps.branch_mapping.outputs.target_branch }}

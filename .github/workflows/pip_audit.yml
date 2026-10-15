@@ -35,9 +35,9 @@ jobs:
   pip-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: 3.12
       - name: install
@@ -53,7 +53,7 @@ jobs:
         run: |
           sudo mkdir -p /etc/pki/tls/certs
           sudo ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
-      - uses: pypa/gh-action-pip-audit@v1.0.8
+      - uses: pypa/gh-action-pip-audit@d499194be74aeb3bc7dbed3a224a87e1831132c7 # v1.0.8
         with:
           virtual-environment: env/
           ignore-vulns: |
