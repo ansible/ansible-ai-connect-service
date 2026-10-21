@@ -96,3 +96,17 @@ jobs:
             # lifetime. Remove once oauthlib>=4.0.0 lands (review by 2026-12-31).
             # See: https://osv.dev/vulnerability/CVE-2026-49265
             CVE-2026-49265
+            # social-auth-core 5.0.2 fixes CVE-2026-62322 (login CSRF in the
+            # LINE backend, which never validated the OAuth state). Not
+            # reachable here: AUTHENTICATION_BACKENDS loads only OpenIdConnectAuth,
+            # AAPOAuth2 and (optionally) GitHub, never LINE. Blocked by the same
+            # social-auth-core~=4.7.0 cap as the entries above.
+            # Remove once social-auth-core>=5.0.2 lands (review by 2026-12-31).
+            # See: https://osv.dev/vulnerability/CVE-2026-62322
+            CVE-2026-62322
+            # No fix available yet for twisted IMAP4 wildcard ReDoS. Not
+            # reachable here: twisted comes in via daphne for its web stack,
+            # and nothing imports twisted.mail or runs an IMAP4 server.
+            # Remove once a fixed twisted is released (review by 2026-12-31).
+            # See: https://osv.dev/vulnerability/CVE-2026-106454
+            CVE-2026-106454
