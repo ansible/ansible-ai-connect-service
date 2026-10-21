@@ -1,0 +1,23 @@
+{
+  // Fail the build on low-severity advisories and above, matching the previous
+  // gate's `audit_level: low`. Do NOT raise this to silence a finding; add a
+  // justified, dated allowlist entry below instead.
+  "low": true,
+  "report-type": "important",
+
+  // Allowlisted advisories. Every entry is unreachable in this app and has no
+  // fix that the dependency tree can take. Each carries a justification and a
+  // review-by date; audit-ci does not enforce expiry, so revisit them by hand.
+  "allowlist": [
+    // GHSA-vfj7-8cjw-p6xm - braces: stack-exhaustion DoS through deeply nested
+    // brace patterns.
+    // NO FIX EXISTS: 3.0.3 is the last release and the advisory covers <=3.0.3,
+    // so no override floor can exclude it. DEV-ONLY: braces comes in via
+    // micromatch (build and test tooling); it is not in the browser bundle.
+    // The DoS needs attacker-controlled glob patterns, and every pattern here
+    // is hand-written config.
+    // Re-evaluate if braces ships a fix or its parents drop it.
+    // Review by: 2026-12-31
+    "GHSA-vfj7-8cjw-p6xm"
+  ]
+}

@@ -14,7 +14,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "vite": "^6.4.2",
+    "vite": "^6.4.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -39,7 +39,7 @@
     ]
   },
   "overrides": {
-    "dompurify": ">=3.4.13",
+    "dompurify": ">=3.4.16",
     "immutable": ">=5.1.8",
     "js-yaml": ">=4.3.2 <5",
     "marked": ">=18.0.2",
@@ -51,7 +51,8 @@
     "brace-expansion@^2.0.0": ">=2.1.7 <3.0.0",
     "brace-expansion@^1.0.0": ">=1.1.21 <2.0.0",
     "brace-expansion@^5.0.0": ">=5.0.12 <6.0.0",
-    "@vitest/mocker": ">=4.1.11 <5"
+    "@vitest/mocker": ">=4.1.11 <5",
+    "source-map-js": ">=1.2.2 <2"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.1",
