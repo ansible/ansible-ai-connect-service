@@ -230,9 +230,6 @@ class WCABaseMetaData(
         i = self.config.timeout
         self._timeout = int(i) if i is not None else None
 
-    def task_gen_timeout(self, task_count=1):
-        return self._timeout * task_count if self._timeout else None
-
     @staticmethod
     def fatal_exception(exc) -> bool:
         """Determine if an exception is fatal or not"""
