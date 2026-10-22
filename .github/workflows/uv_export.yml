@@ -41,6 +41,15 @@ jobs:
             'requirements-vcs.txt must carry the pyproject.toml certifi constraint verbatim'
         assert ' @ ' not in Path('requirements.txt').read_text(), \
             'pip --require-hashes cannot verify VCS dependencies'
-        assert 'requirements-vcs.txt' in Path('wisdom-service.Containerfile').read_text(), \
-            'Containerfile must install requirements-vcs.txt before the hashed requirements'
+        containerfile = Path('wisdom-service.Containerfile').read_text().splitlines()
+        vcs_install = [n for n, l in enumerate(containerfile)
+                       if l.lstrip().startswith('RUN') and 'install' in l and 'requirements-vcs.txt' in l]
+        hashed_install = [n for n, l in enumerate(containerfile)
+                          if l.lstrip().startswith('RUN') and '--require-hashes' in l]
+        assert vcs_install, \
+            'Containerfile must RUN-install requirements-vcs.txt; COPY alone is not enough'
+        assert hashed_install, \
+            'Containerfile must install requirements.txt with --require-hashes'
+        assert max(vcs_install) < min(hashed_install), \
+            'requirements-vcs.txt must be installed before the hashed requirements'
         PY
