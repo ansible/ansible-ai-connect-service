@@ -290,12 +290,16 @@ This will spin up a container and run the equivalent of:
 
 ```bash
 uv lock
-uv export --format requirements-txt --no-hashes -o requirements.txt
+uv export --format requirements-txt --hashes --no-emit-project --no-emit-package certifi -o requirements.txt
 ```
 
 This generates:
 - `uv.lock` - The lock file with exact pinned versions (commit this file)
-- `requirements.txt` - Exported for pip compatibility
+- `requirements.txt` - Hashed export for pip's `--require-hashes` mode. The
+  commit-pinned system-certifi Git fork cannot be hash-verified by pip, so it
+  is excluded from the export and lives in `requirements-vcs.txt`, which must
+  be installed before `requirements.txt` wherever it is used (pip turns on
+  hash checking implicitly when the requirements file carries hashes).
 
 ### Security constraints
 
