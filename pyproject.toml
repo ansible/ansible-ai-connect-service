@@ -23,7 +23,7 @@ dependencies = [
   'django-oauth-toolkit~=3.0.1',
   'django_prometheus~=2.2.0',
   'django-test-migrations~=1.5.0',
-  'djangorestframework~=3.15.2',
+  'djangorestframework>=3.18.2,<3.19',
   'drf-spectacular~=0.29.0',
   'fire~=0.7.0',
   'ipython~=8.10.0',
@@ -98,6 +98,13 @@ constraint-dependencies = [
   'twisted>=26.4.0',
   'pygments>=2.20.0',
   'tablib>=3.10.0',
+]
+# django-ansible-base declares djangorestframework<3.16 to work around an
+# OAuth2Application.organization regression in its oauth2_provider app, which this
+# service does not install. Override the cap so the service can run a current DRF;
+# drop this once django-ansible-base lifts the cap (ansible/django-ansible-base#1134).
+override-dependencies = [
+  'djangorestframework>=3.18.2,<3.19',
 ]
 
 
