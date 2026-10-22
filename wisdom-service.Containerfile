@@ -31,6 +31,7 @@ RUN dnf module enable nodejs:22 nginx:1.22 -y && \
 
 # Copy the ansible_wisdom package files
 COPY requirements.txt /var/www/ansible-ai-connect-service/
+COPY requirements-vcs.txt /var/www/ansible-ai-connect-service/
 COPY setup.cfg /var/www/ansible-ai-connect-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-ai-connect-service/pyproject.toml
 COPY README.md /var/www/ansible-ai-connect-service/README.md
@@ -46,9 +47,10 @@ ENV PATH="/var/www/venv/bin:${PATH}"
 RUN dnf install -y openssl-devel
 RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
 
-# pip cannot hash a VCS requirement. Install the system-certifi fork at the
-# commit pinned in pyproject.toml, then require hashes for the exported packages.
-RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install "certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9"
+# pip --require-hashes (implied by the hashed requirements.txt) cannot verify
+# VCS requirements. Install the pinned system-certifi fork first, then the
+# hashed export, which excludes it.
+RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements-vcs.txt
 RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install --require-hashes -r/var/www/ansible-ai-connect-service/requirements.txt
 RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
 RUN mkdir /var/run/uwsgi /var/run/daphne

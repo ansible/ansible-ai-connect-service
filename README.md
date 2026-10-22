@@ -296,8 +296,10 @@ uv export --format requirements-txt --hashes --no-emit-project --no-emit-package
 This generates:
 - `uv.lock` - The lock file with exact pinned versions (commit this file)
 - `requirements.txt` - Hashed export for pip's `--require-hashes` mode. The
-  commit-pinned system-certifi Git fork cannot be hash-verified by pip and is
-  installed separately by `wisdom-service.Containerfile`.
+  commit-pinned system-certifi Git fork cannot be hash-verified by pip, so it
+  is excluded from the export and lives in `requirements-vcs.txt`, which must
+  be installed before `requirements.txt` wherever it is used (pip turns on
+  hash checking implicitly when the requirements file carries hashes).
 
 ### Security constraints
 

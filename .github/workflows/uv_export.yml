@@ -37,8 +37,10 @@ jobs:
         constraints = tomllib.loads(Path('pyproject.toml').read_text())['tool']['uv']['constraint-dependencies']
         certifi = [item for item in constraints if item.startswith('certifi @ git+')]
         assert len(certifi) == 1, 'Expected one commit-pinned system-certifi constraint'
-        assert f'install "{certifi[0]}"' in Path('wisdom-service.Containerfile').read_text(), \
-            'Containerfile system-certifi pin must match pyproject.toml'
-        assert 'certifi @' not in Path('requirements.txt').read_text(), \
+        assert certifi[0] in Path('requirements-vcs.txt').read_text(), \
+            'requirements-vcs.txt must carry the pyproject.toml certifi constraint verbatim'
+        assert ' @ ' not in Path('requirements.txt').read_text(), \
             'pip --require-hashes cannot verify VCS dependencies'
+        assert 'requirements-vcs.txt' in Path('wisdom-service.Containerfile').read_text(), \
+            'Containerfile must install requirements-vcs.txt before the hashed requirements'
         PY
