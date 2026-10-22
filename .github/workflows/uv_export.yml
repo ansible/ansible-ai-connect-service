@@ -26,5 +26,19 @@ jobs:
     - name: Compile requirements
       run: |
         uv lock
-        uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+        uv export --format requirements-txt --hashes --no-emit-project --no-emit-package certifi -o requirements.txt
         git diff --exit-code -- uv.lock requirements.txt
+    - name: Check system-certifi pin
+      run: |
+        python - <<'PY'
+        from pathlib import Path
+        import tomllib
+
+        constraints = tomllib.loads(Path('pyproject.toml').read_text())['tool']['uv']['constraint-dependencies']
+        certifi = [item for item in constraints if item.startswith('certifi @ git+')]
+        assert len(certifi) == 1, 'Expected one commit-pinned system-certifi constraint'
+        assert f'install "{certifi[0]}"' in Path('wisdom-service.Containerfile').read_text(), \
+            'Containerfile system-certifi pin must match pyproject.toml'
+        assert 'certifi @' not in Path('requirements.txt').read_text(), \
+            'pip --require-hashes cannot verify VCS dependencies'
+        PY
