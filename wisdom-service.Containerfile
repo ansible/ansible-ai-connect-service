@@ -1,4 +1,5 @@
-FROM registry.access.redhat.com/ubi9/ubi:latest AS production
+# Update this base digest and rpms.lock.yaml together.
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:48393e4261b2544f652c915b3e052256ddf66ee95cd04dc0362191f302c4e94a AS production
 
 ARG IMAGE_TAGS=image-tags-not-defined
 ARG GIT_COMMIT=git-commit-not-defined
@@ -31,22 +32,26 @@ RUN dnf module enable nodejs:22 nginx:1.22 -y && \
 
 # Copy the ansible_wisdom package files
 COPY requirements.txt /var/www/ansible-ai-connect-service/
+COPY requirements-vcs.txt /var/www/ansible-ai-connect-service/
+COPY requirements-image.txt /var/www/ansible-ai-connect-service/
 COPY setup.cfg /var/www/ansible-ai-connect-service/setup.cfg
 COPY pyproject.toml /var/www/ansible-ai-connect-service/pyproject.toml
 COPY README.md /var/www/ansible-ai-connect-service/README.md
 COPY ansible_ai_connect /var/www/ansible-ai-connect-service/ansible_ai_connect
 
 # Compile Python/Django application
-RUN /usr/bin/python3.12 -m pip --no-cache-dir install supervisor
+RUN /usr/bin/python3.12 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements-image.txt
 RUN /usr/bin/python3.12 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
 
-# Address GHSA-79v4-65xg-pq4g and the fact jwcrypto prevent us from pulling cryptography 44.0.1
-# Please remove once jwcrypto and cryptography can be both upgraded
+# Keep the existing development headers for packages built from source (e.g. uwsgi).
 RUN dnf install -y openssl-devel
-RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
 
-RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements.txt
+# pip --require-hashes (implied by the hashed requirements.txt) cannot verify
+# VCS requirements. Install the pinned system-certifi fork first, then the
+# hashed export, which excludes it.
+RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -r/var/www/ansible-ai-connect-service/requirements-vcs.txt
+RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install --require-hashes -r/var/www/ansible-ai-connect-service/requirements.txt
 RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install -e/var/www/ansible-ai-connect-service/
 RUN mkdir /var/run/uwsgi /var/run/daphne
 
@@ -66,7 +71,7 @@ COPY ansible_ai_connect_admin_portal/src /tmp/ansible_ai_connect_admin_portal/sr
 COPY ansible_ai_connect_admin_portal/package.json /tmp/ansible_ai_connect_admin_portal/package.json
 COPY ansible_ai_connect_admin_portal/package-lock.json /tmp/ansible_ai_connect_admin_portal/package-lock.json
 COPY ansible_ai_connect_admin_portal/tsconfig.json /tmp/ansible_ai_connect_admin_portal/tsconfig.json
-RUN npm --prefix /tmp/ansible_ai_connect_admin_portal ci
+RUN npm --prefix /tmp/ansible_ai_connect_admin_portal ci --offline --no-audit
 RUN npm --prefix /tmp/ansible_ai_connect_admin_portal run build
 
 # Compile React/TypeScript Chatbot application
@@ -77,7 +82,8 @@ COPY ansible_ai_connect_chatbot/package.json /tmp/ansible_ai_connect_chatbot/pac
 COPY ansible_ai_connect_chatbot/package-lock.json /tmp/ansible_ai_connect_chatbot/package-lock.json
 COPY ansible_ai_connect_chatbot/tsconfig.json /tmp/ansible_ai_connect_chatbot/tsconfig.json
 COPY ansible_ai_connect_chatbot/vite.config.ts /tmp/ansible_ai_connect_chatbot/vite.config.ts
-RUN npm --prefix /tmp/ansible_ai_connect_chatbot ci
+# The locked ESLint 9 / nested ESLint 8 peer tree otherwise makes npm query the registry.
+RUN npm --prefix /tmp/ansible_ai_connect_chatbot ci --offline --no-audit --legacy-peer-deps
 RUN ln -s /var/www/ansible-ai-connect-service/ansible_ai_connect /tmp/ansible_ai_connect
 RUN npm --prefix /tmp/ansible_ai_connect_chatbot run build
 RUN unlink /tmp/ansible_ai_connect

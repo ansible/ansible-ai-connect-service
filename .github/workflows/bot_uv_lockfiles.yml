@@ -47,7 +47,7 @@ jobs:
       - name: Regenerate lockfile and export
         run: |
           uv lock
-          uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+          uv export --format requirements-txt --hashes --no-emit-project --no-emit-package certifi -o requirements.txt
 
       - name: Commit regenerated files
         run: |

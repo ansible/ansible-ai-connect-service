@@ -1,0 +1,30 @@
+# Keep the RPM transaction aligned with wisdom-service.Containerfile.
+context:
+  containerfile: wisdom-service.Containerfile
+packages:
+  - git
+  - python3.12-devel
+  - gcc
+  - libpq
+  - libpq-devel
+  - python3.12
+  - python3.12-pip
+  - postgresql
+  - less
+  - npm
+  - nginx
+  - rsync
+  - openssl-devel
+moduleEnable:
+  - nodejs:22
+  - nginx:1.22
+arches:
+  - x86_64
+contentOrigin:
+  repos:
+    - repoid: ubi-9-baseos-rpms
+      baseurl: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/$basearch/baseos/os
+    - repoid: ubi-9-appstream-rpms
+      baseurl: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/$basearch/appstream/os
+    - repoid: ubi-9-codeready-builder-rpms
+      baseurl: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/$basearch/codeready-builder/os
