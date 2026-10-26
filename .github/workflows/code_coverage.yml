@@ -13,7 +13,7 @@ jobs:
   build:
     name: Unit Test and SonarCloud Scan
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # Only run for ansible organization
     if: github.repository_owner == 'ansible'
