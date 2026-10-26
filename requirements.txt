@@ -117,7 +117,7 @@ django==5.2.17
     #   social-auth-app-django
 django-allow-cidr==0.8.0
     # via ansible-ai-connect
-django-ansible-base==2026.1.26
+django-ansible-base==2026.10.26
     # via ansible-ai-connect
 django-crum==0.7.9
     # via django-ansible-base
@@ -137,7 +137,7 @@ django-prometheus==2.2.0
     # via ansible-ai-connect
 django-test-migrations==1.5.0
     # via ansible-ai-connect
-djangorestframework==3.15.2
+djangorestframework==3.18.3
     # via
     #   ansible-ai-connect
     #   django-ansible-base
@@ -239,6 +239,8 @@ multidict==6.9.1
     #   yarl
 mypy-extensions==1.1.0
     # via black
+nh3==0.3.7
+    # via django-ansible-base
 oauth2client==4.1.3
     # via pydrive2
 oauthlib==3.3.1
@@ -352,6 +354,8 @@ referencing==0.36.2
     #   django-ansible-base
     #   jsonschema
     #   jsonschema-specifications
+regex==2026.9.29
+    # via django-ansible-base
 requests==2.33.1
     # via
     #   ansible-ai-connect
