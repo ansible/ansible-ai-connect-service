@@ -13,7 +13,8 @@ jobs:
   build:
     name: Unit Test and SonarCloud Scan
 
-    runs-on: ubuntu-latest
+    # Playwright 1.59.1 does not support Chromium on Ubuntu 26.04.
+    runs-on: ubuntu-24.04
 
     # Only run for ansible organization
     if: github.repository_owner == 'ansible'
@@ -64,7 +65,7 @@ jobs:
           pip install -r requirements.txt
           pip install .[dev]
 
-      - name: Create CA symlink to use RH's certifi on ubuntu-latest
+      - name: Create CA symlink to use RH's certifi on Ubuntu
         run: |
           sudo mkdir -p /etc/pki/tls/certs
           sudo ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
