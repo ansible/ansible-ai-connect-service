@@ -32,7 +32,7 @@ The instructions presented here were tested using
 
 This document assumes that you are using a local Ollama model server, whose setup procedure is described in
 the
- [Start the model server](../README.md#start-the-model-server) section
+ [Getting started](../README.md#getting-started) section
 of the README.md file.
 
 ### Install PyCharm
@@ -59,9 +59,10 @@ service directly from code with running backend services in containers.
 > While docker-compose setup runs Ansible AI Connect Django service with uwsgi, the setup presented here
 > does not use uwsgi and some behaviors at runtime are different.
 
-With [PR #89](https://github.com/ansible/ansible-ai-connect-service/pull/89), we added a separate compose YAML file
-([compose-backends.yaml](../tools/docker-compose/compose-backends.yaml)) and added two new
-Makefile targets for the new YAML file, i.e., for running backend services, type:
+With [PR #89](https://github.com/ansible/ansible-ai-connect-service/pull/89), we added separate compose YAML files
+([compose-db.yaml](../tools/docker-compose/compose-db.yaml) and
+[compose-prom-grafana.yaml](../tools/docker-compose/compose-prom-grafana.yaml)) and added two new
+Makefile targets for them, i.e., for running backend services, type:
 ```bash
 make start-backends
 ```
