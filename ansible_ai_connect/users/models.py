@@ -153,7 +153,6 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
     plans = models.ManyToManyField(
         Plan,
         through="users.UserPlan",
-        through_fields=("user", "plan"),
     )
 
 

@@ -75,39 +75,15 @@ jobs:
             # Disputed — pyjwt 2.12.1 is latest, no fix version available
             # See: https://osv.dev/vulnerability/PYSEC-2025-183
             PYSEC-2025-183
-            # social-auth-core 5.0.0 fixes these, but needs social-auth-app-django 6.x
-            # and both are capped (~=4.7.0 / ~=5.6.0) in pyproject.toml. None is
-            # reachable: AUTHENTICATION_BACKENDS enables only OpenIdConnectAuth,
-            # AAPOAuth2 and (optionally) GitHub, and SOCIAL_AUTH_PIPELINE has no
-            # partial steps. Remove once social-auth-core>=5.0.0 lands (review by 2026-12-31).
-            # SAML account association (backend not enabled)
-            CVE-2026-57175
-            # Vend backend (not enabled)
-            CVE-2026-57176
-            # LoginRadius backend (not enabled)
-            CVE-2026-57177
-            # vk-app backend (not enabled)
-            CVE-2026-57178
-            # partial pipeline resume (no partial steps in SOCIAL_AUTH_PIPELINE)
-            CVE-2026-57179
-            # oauthlib 4.0.0 fixes this PKCE code_verifier timing leak, but is a major
-            # bump under django-oauth-toolkit and needs its own PR. Not practically
-            # exploitable: our VS Code client uses S256, where the leak reveals at most
-            # the already-public code_challenge, and codes are single-use with a 60s
-            # lifetime. Remove once oauthlib>=4.0.0 lands (review by 2026-12-31).
-            # See: https://osv.dev/vulnerability/CVE-2026-49265
-            CVE-2026-49265
-            # social-auth-core 5.0.2 fixes CVE-2026-62322 (login CSRF in the
-            # LINE backend, which never validated the OAuth state). Not
-            # reachable here: AUTHENTICATION_BACKENDS loads only OpenIdConnectAuth,
-            # AAPOAuth2 and (optionally) GitHub, never LINE. Blocked by the same
-            # social-auth-core~=4.7.0 cap as the entries above.
-            # Remove once social-auth-core>=5.0.2 lands (review by 2026-12-31).
-            # See: https://osv.dev/vulnerability/CVE-2026-62322
-            CVE-2026-62322
             # No fix available yet for twisted IMAP4 wildcard ReDoS. Not
             # reachable here: twisted comes in via daphne for its web stack,
             # and nothing imports twisted.mail or runs an IMAP4 server.
             # Remove once a fixed twisted is released (review by 2026-12-31).
             # See: https://osv.dev/vulnerability/CVE-2026-106454
             CVE-2026-106454
+            # twisted.names DNS client accepts spoofed UDP answers (fix in 26.10.0rc1
+            # only). Not reachable here: nothing imports twisted.names; daphne uses
+            # twisted for its web stack only. Remove once twisted 26.10.0 is released
+            # (review by 2026-12-31).
+            # See: https://osv.dev/vulnerability/CVE-2026-83813
+            CVE-2026-83813

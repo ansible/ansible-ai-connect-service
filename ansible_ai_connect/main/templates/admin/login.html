@@ -66,9 +66,10 @@
   </div>
 </form>
 
-<div class="form-row submit-row">
-  <a href="{% url 'social:begin' 'oidc' %}"><span class="button">Log in using Red Hat SSO</span></a>
-</div>
+<form method="post" action="{% url 'social:begin' 'oidc' %}" class="form-row submit-row">
+  {% csrf_token %}
+  <input type="submit" value="Log in using Red Hat SSO">
+</form>
 
 </div>
 {% endblock %}
