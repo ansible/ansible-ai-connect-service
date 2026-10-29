@@ -359,8 +359,7 @@ Submit all changes as pull requests against `main`.
 
 ### CI checks
 
-These checks run on every pull request, and all of them must pass before a
-merge:
+These checks run on pull requests. Get them green before you ask for a merge.
 
 | Check | What it does |
 |---|---|
@@ -368,10 +367,11 @@ merge:
 | [Code coverage](../.github/workflows/code_coverage.yml) | Unit tests and SonarCloud scan |
 | [Pyright](../.github/workflows/pyright.yml) | Type checking |
 | [pip audit](../.github/workflows/pip_audit.yml) | Python dependency security scan |
-| [npm audit](../.github/workflows/npm_audit.yml) | JavaScript dependency security scan |
-| [UI compile](../.github/workflows/ui_compile.yml) | TypeScript build check |
 | [OpenAPI schema](../.github/workflows/code_coverage.yml) | Schema validation and drift detection |
 | [uv export](../.github/workflows/uv_export.yml) | Lock file consistency |
+| Admin portal: [npm audit](../.github/workflows/npm_audit.yml), [build and test](../.github/workflows/ui_compile.yml) | JavaScript dependency scan, TypeScript build, and tests |
+| Chatbot: [npm audit](../.github/workflows/npm_audit_chatbot.yml), [build and test](../.github/workflows/ui_compile_chatbot.yml) | Same checks for the chatbot UI |
+| AAP chatbot: [npm audit](../.github/workflows/npm_audit_aap_chatbot.yml), [build and test](../.github/workflows/ui_test_aap_chatbot.yml) | Same checks for the AAP chatbot package |
 
 ### Backports
 
@@ -402,23 +402,31 @@ dependencies, like
 [ansible-chatbot-stack](https://github.com/ansible/ansible-chatbot-stack). All
 dependencies are in `pyproject.toml`.
 
-To update the pinned versions:
+To update the pinned versions after you change `pyproject.toml`:
 
-```bash
-make export
-```
+1. Resolve the lock file locally. `uv.lock` is cross-platform, so always
+   resolve it on your machine, not in a container:
 
-This runs the following in a container:
+   ```bash
+   uv lock
+   ```
 
-```bash
-uv lock
-uv export --format requirements-txt --no-hashes -o requirements.txt
-```
+1. Export `requirements.txt` for the Linux target platform:
 
-It updates two files. Commit both:
+   ```bash
+   make export
+   ```
 
-- `uv.lock`: exact pinned versions.
-- `requirements.txt`: the same pins, for pip.
+   This runs the following in a container. It does not run `uv lock`:
+
+   ```bash
+   uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+   ```
+
+1. Commit both files:
+
+   - `uv.lock`: exact pinned versions.
+   - `requirements.txt`: the same pins, for pip.
 
 Security pins for transitive dependencies go in `constraint-dependencies`
 under `[tool.uv]` in `pyproject.toml`. `uv lock` applies them automatically.
@@ -493,7 +501,7 @@ podman compose -f tools/docker-compose/compose.yaml down
 If you changed the nginx settings, also remove the image so it rebuilds:
 
 ```bash
-podman rmi localhost/docker-compose_django_1
+podman rmi localhost/docker-compose_django:latest
 ```
 
 ### Too many open files

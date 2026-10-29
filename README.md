@@ -99,7 +99,9 @@ Run the commands below from the repository root.
    podman compose -f tools/docker-compose/compose.yaml --env-file tools/docker-compose/.env up
    ```
 
-   The service runs at <http://localhost:8000>.
+   The service runs at <http://localhost:8000>. The first run builds the
+   image, which needs plenty of memory. If the build fails with `SIGKILL`, see
+   [Container build runs out of memory](./docs/development.md#container-build-runs-out-of-memory).
 
 4. Connect VS Code: in the Ansible extension settings, enable
    `Ansible > Lightspeed` and `Ansible > Lightspeed: Suggestions`, and set
