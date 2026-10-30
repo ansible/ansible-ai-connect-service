@@ -424,7 +424,7 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-twisted==26.4.0
+twisted==26.10.0
     # via daphne
 txaio==26.6.1
     # via autobahn
