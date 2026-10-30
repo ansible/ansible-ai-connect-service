@@ -99,6 +99,10 @@ constraint-dependencies = [
   'autobahn>=26.10.1',
   'pygments>=2.20.0',
   'tablib>=3.10.0',
+  # CVE: distrust eMudhra intermediate CA certificates (bz#2563310)
+  'botocore>=1.43.117',
+  # CVE: distrust eMudhra intermediate CA certificates (bz#2563296)
+  'httplib2>=0.32.1',
 ]
 
 

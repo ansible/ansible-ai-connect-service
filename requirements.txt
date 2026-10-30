@@ -48,9 +48,9 @@ backoff==2.2.1
     # via segment-analytics-python
 black==26.10.1
     # via ansible-lint
-boto3==1.42.5
+boto3==1.43.122
     # via ansible-ai-connect
-botocore==1.42.5
+botocore==1.43.122
     # via
     #   boto3
     #   s3transfer
@@ -183,7 +183,7 @@ google-auth-httplib2==0.2.1
     # via google-api-python-client
 googleapis-common-protos==1.72.0
     # via google-api-core
-httplib2==0.32.0
+httplib2==0.32.1
     # via
     #   google-api-python-client
     #   google-auth-httplib2
@@ -386,7 +386,7 @@ ruamel-yaml==0.18.16
     # via ansible-lint
 ruamel-yaml-clib==0.2.15 ; python_full_version < '3.14' and platform_python_implementation == 'CPython'
     # via ruamel-yaml
-s3transfer==0.16.0
+s3transfer==0.19.3
     # via boto3
 segment-analytics-python==2.2.3
     # via ansible-ai-connect
