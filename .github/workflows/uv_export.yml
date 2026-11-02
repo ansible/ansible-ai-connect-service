@@ -26,5 +26,30 @@ jobs:
     - name: Compile requirements
       run: |
         uv lock
-        uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+        uv export --format requirements-txt --hashes --no-emit-project --no-emit-package certifi -o requirements.txt
         git diff --exit-code -- uv.lock requirements.txt
+    - name: Check system-certifi pin
+      run: |
+        python - <<'PY'
+        from pathlib import Path
+        import tomllib
+
+        constraints = tomllib.loads(Path('pyproject.toml').read_text())['tool']['uv']['constraint-dependencies']
+        certifi = [item for item in constraints if item.startswith('certifi @ git+')]
+        assert len(certifi) == 1, 'Expected one commit-pinned system-certifi constraint'
+        assert certifi[0] in Path('requirements-vcs.txt').read_text(), \
+            'requirements-vcs.txt must carry the pyproject.toml certifi constraint verbatim'
+        assert ' @ ' not in Path('requirements.txt').read_text(), \
+            'pip --require-hashes cannot verify VCS dependencies'
+        containerfile = Path('wisdom-service.Containerfile').read_text().splitlines()
+        vcs_install = [n for n, l in enumerate(containerfile)
+                       if l.lstrip().startswith('RUN') and 'install' in l and 'requirements-vcs.txt' in l]
+        hashed_install = [n for n, l in enumerate(containerfile)
+                          if l.lstrip().startswith('RUN') and '--require-hashes' in l]
+        assert vcs_install, \
+            'Containerfile must RUN-install requirements-vcs.txt; COPY alone is not enough'
+        assert hashed_install, \
+            'Containerfile must install requirements.txt with --require-hashes'
+        assert max(vcs_install) < min(hashed_install), \
+            'requirements-vcs.txt must be installed before the hashed requirements'
+        PY

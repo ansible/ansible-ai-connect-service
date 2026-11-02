@@ -420,13 +420,17 @@ To update the pinned versions after you change `pyproject.toml`:
    This runs the following in a container. It does not run `uv lock`:
 
    ```bash
-   uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+    uv export --format requirements-txt --hashes --no-emit-project --no-emit-package certifi -o requirements.txt
    ```
 
 1. Commit both files:
 
    - `uv.lock`: exact pinned versions.
-   - `requirements.txt`: the same pins, for pip.
+    - `requirements.txt`: the same pins with hashes for pip's `--require-hashes` mode.
+
+The commit-pinned system-certifi Git fork cannot be hash-verified by pip. It
+lives in `requirements-vcs.txt` instead and must be installed before the
+hashed export wherever `requirements.txt` is installed.
 
 Security pins for transitive dependencies go in `constraint-dependencies`
 under `[tool.uv]` in `pyproject.toml`. `uv lock` applies them automatically.

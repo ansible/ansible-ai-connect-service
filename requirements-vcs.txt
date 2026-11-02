@@ -1,0 +1,12 @@
+# VCS dependencies, installed separately from the hashed requirements.txt.
+#
+# pip cannot verify hashes for git requirements, so `uv export` excludes them
+# from requirements.txt (see tools/scripts/uv-export.sh). Install this file
+# first wherever requirements.txt is installed, including the container image.
+# pip enables --require-hashes mode implicitly when the requirements file
+# carries hashes, and in that mode every transitive dependency must be pinned
+# and hashed — so certifi must already be present when requirements.txt runs.
+#
+# Kept in sync with the certifi constraint in pyproject.toml by the
+# "Check system-certifi pin" step in .github/workflows/uv_export.yml.
+certifi @ git+https://github.com/ansible/system-certifi@5aa52ab91f9d579bfe52b5acf30ca799f1a563d9
