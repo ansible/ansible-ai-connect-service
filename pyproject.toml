@@ -7,12 +7,12 @@ name = "ansible-ai-connect"
 description = "Ansible Lightspeed with IBM watsonx Code Assistant."
 version = "0.1.0"
 dependencies = [
-  'aiohttp~=3.14.3',
+  'aiohttp~=3.14.4',
   'ansible-core~=2.16.19',
   'ansible-anonymizer~=1.5.0',
   'ansible-lint~=25.5.0',
   'boto3~=1.40',
-  'cbor2~=5.9.0',
+  'cbor2>=5.9.0',
   'cython',
   'daphne~=4.2.2',
   'Django~=5.2.17',
@@ -23,7 +23,7 @@ dependencies = [
   'django-oauth-toolkit~=3.0.1',
   'django_prometheus~=2.2.0',
   'django-test-migrations~=1.5.0',
-  'djangorestframework~=3.15.2',
+  'djangorestframework>=3.18.2',
   'drf-spectacular~=0.29.0',
   'fire~=0.7.0',
   'ipython~=8.10.0',
@@ -36,18 +36,18 @@ dependencies = [
   'pydantic==2.*',
   'pytz',
   'PyYAML>=6.0',
-  'requests~=2.33.0',
+  'requests~=2.34.0',
   'segment-analytics-python~=2.2.2',
   'slack-sdk~=3.31.0',
-  'social-auth-app-django~=5.6.0',
-  'social-auth-core~=4.7.0',
+  'social-auth-app-django~=7.2.0',
+  'social-auth-core~=6.2.0',
   'urllib3~=2.8.0',
   'uwsgi~=2.0.28',
   'uwsgi-readiness-check~=0.2.0',
   'django-allow-cidr',
   'django-csp~=3.7',
-  'django-ansible-base[api-documentation,jwt-consumer,resource-registry]>=2026.1.26',
-  'filelock==3.20.3',
+  'django-ansible-base[api-documentation,jwt-consumer,resource-registry]>=2026.10.26',
+  'filelock>=4.2.1',
   'pyasn1==0.6.4',
 ]
 readme = "README.rst"
@@ -60,7 +60,7 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = [
-  'black~=26.5.1',
+  'black~=26.10.1',
   'coverage~=7.2.1',
   'flake8>=6.0,<6.2',
   'grpcio-tools~=1.68.1',
@@ -90,14 +90,19 @@ constraint-dependencies = [
   'pyopenssl>=26.0.0',
   'cryptography>=50.0.0',
   'dynaconf>=3.2.13',
-  'pyjwt>=2.13.0',
+  'pyjwt>=2.14.0',
   'ujson>=5.13.0',
-  'msgpack>=1.2.2',
+  'msgpack>=1.2.3',
   'multidict>=6.9.1',
   'idna>=3.15',
-  'twisted>=26.4.0',
+  'twisted>=26.10.0',
+  'autobahn>=26.10.1',
   'pygments>=2.20.0',
   'tablib>=3.10.0',
+  # CVE: distrust eMudhra intermediate CA certificates (bz#2563310)
+  'botocore>=1.43.117',
+  # CVE: distrust eMudhra intermediate CA certificates (bz#2563296)
+  'httplib2>=0.32.1',
 ]
 
 

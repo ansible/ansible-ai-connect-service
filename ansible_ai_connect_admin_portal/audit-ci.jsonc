@@ -1,0 +1,34 @@
+{
+  // Fail the build on low-severity advisories and above, matching the previous
+  // gate's `audit_level: low`. Do NOT raise this to silence a finding; add a
+  // justified, dated allowlist entry below instead.
+  "low": true,
+  "report-type": "important",
+
+  // Allowlisted advisories. Every entry is unreachable in this app and has no
+  // fix that the dependency tree can take. Each carries a justification and a
+  // review-by date; audit-ci does not enforce expiry, so revisit them by hand.
+  "allowlist": [
+    // GHSA-vfj7-8cjw-p6xm - braces: stack-exhaustion DoS through deeply nested
+    // brace patterns.
+    // NO FIX EXISTS: 3.0.3 is the last release and the advisory covers <=3.0.3,
+    // so no override floor can exclude it. BUILD-TIME ONLY: braces comes in via
+    // chokidar (webpack-dev-server file watching) and micromatch (webpack and
+    // jest tooling); it is not in the browser bundle. The DoS needs attacker-
+    // controlled glob patterns, and every pattern here is hand-written config.
+    // Re-evaluate if braces ships a fix or its parents drop it.
+    // Review by: 2026-12-31
+    "GHSA-vfj7-8cjw-p6xm",
+
+    // GHSA-rj75-hqrm-r3gf - postcss-selector-parser: quadratic complexity in
+    // flat selector parsing (CPU exhaustion).
+    // NO FIX IN 6.x: fixed only in 7.1.6, and 18 cssnano / postcss-preset-env
+    // plugins require ^6, so the 6.x copy cannot be lifted without a major
+    // upgrade of the CSS toolchain. The 7.x copy is floored at >=7.1.6 in
+    // package.json overrides. BUILD-TIME ONLY: it parses this repo's own CSS
+    // during `npm run build`; no untrusted selector input ever reaches it.
+    // Re-evaluate when the CSS toolchain moves to postcss-selector-parser 7.
+    // Review by: 2026-12-31
+    "GHSA-rj75-hqrm-r3gf"
+  ]
+}
