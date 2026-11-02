@@ -44,11 +44,10 @@ jobs:
         run: npm ci
         working-directory: ${{env.WORKING_DIRECTORY}}
 
-      - name: Run npm audit
-        uses: oke-py/npm-audit-action@v5
-        with:
-          audit_level: low
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          create_issues: false
-          create_pr_comments: false
-          working_directory: ${{env.WORKING_DIRECTORY}}
+      # Gate on `npm audit` via audit-ci, which honours a committed allowlist
+      # (audit-ci.jsonc). The threshold and the accepted advisories live in that
+      # file, so every suppression is reviewed in-repo with a justification and
+      # a review-by date rather than hidden behind a raised audit level.
+      - name: Run npm audit (audit-ci)
+        run: npx --yes audit-ci@^7 --config ./audit-ci.jsonc
+        working-directory: ${{env.WORKING_DIRECTORY}}

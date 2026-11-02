@@ -221,6 +221,40 @@ class AlreadyAuth(TestCase):
         self.assertIn("Log in with Ansible Automation Platform", contents)
 
     @override_settings(DEPLOYMENT_MODE="onprem")
+    def test_login_aap_posts_to_social_begin(self):
+        # social-auth-app-django 6+ only accepts POST on social:begin.
+        request = RequestFactory().get("/login")
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn(
+            f'<form method="post" action="{reverse("social:begin", args=["aap"])}', contents
+        )
+        self.assertIn('name="csrfmiddlewaretoken"', contents)
+
+    def test_social_begin_requires_post(self):
+        url = reverse("social:begin", args=["aap"])
+        self.assertEqual(self.client.get(url).status_code, HTTPStatus.METHOD_NOT_ALLOWED)
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertIn("code_challenge=", response["Location"])
+
+    def test_social_begin_stores_next_from_post_body(self):
+        # do_auth reads only the POST body, so next must be a form field, not ?next=.
+        self.client.post(reverse("social:begin", args=["aap"]), {"next": "/somewhere/"})
+        self.assertEqual(self.client.session.get("next"), "/somewhere/")
+
+    @override_settings(DEPLOYMENT_MODE="onprem")
+    def test_login_aap_form_carries_next(self):
+        request = RequestFactory().get("/login", {"next": "/somewhere/"})
+        request.user = AnonymousUser()
+        response = LoginView.as_view()(request)
+        response.render()
+        contents = response.content.decode()
+        self.assertIn('<input type="hidden" name="next" value="/somewhere/">', contents)
+
+    @override_settings(DEPLOYMENT_MODE="onprem")
     @override_settings(AAP_API_PROVIDER_NAME="Ansible Automation Controller")
     def test_login_aap_override_provider_name(self):
         request = RequestFactory().get("/login")

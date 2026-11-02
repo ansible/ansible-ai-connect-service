@@ -44,6 +44,8 @@ class DummyRHBackend(OpenIdConnectAuth):
         self.jwk_public_key = algo.to_jwk(self.rsa_private_key.public_key(), as_dict=True)
         self.jwk_public_key["alg"] = "RS256"
         self.issuer = "https://myauth.com/auth/realms/my-realm"
+        # OpenIdConnectAuth.__init__ (skipped here) sets this; the pipeline reads it.
+        self.id_token = None
 
     def find_valid_key(self, id_token):
         return self.jwk_public_key
@@ -76,7 +78,7 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         self.authentication = AAPOAuth2()
         user = MagicMock()
         response = {"is_system_auditor": True, "is_superuser": True}
-        data = self.authentication.extra_data(user, "UUID", response)
+        data = self.authentication.extra_data(user, "UUID", response, {}, {})
 
         self.assertTrue(data["aap_licensed"])
         self.assertTrue(data["aap_system_auditor"])
@@ -96,7 +98,7 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         self.authentication = AAPOAuth2()
         user = MagicMock()
         response = {"is_system_auditor": False, "is_superuser": False}
-        data = self.authentication.extra_data(user, "UUID", response)
+        data = self.authentication.extra_data(user, "UUID", response, {}, {})
 
         self.assertFalse(data["aap_licensed"])
         self.assertFalse(data["aap_system_auditor"])
@@ -112,7 +114,7 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         self.authentication = AAPOAuth2()
         user = MagicMock()
         response = {}
-        data = self.authentication.extra_data(user, "UUID", response)
+        data = self.authentication.extra_data(user, "UUID", response, {}, {})
 
         self.assertFalse(data["aap_licensed"])
         self.assertFalse(data["aap_system_auditor"])
@@ -209,6 +211,24 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
             access_token = "dummy_token"
             self.assertFalse(authentication.user_has_valid_license(access_token))
 
+    @patch.multiple(
+        "social_core.backends.oauth.BaseOAuth2",
+        get_json=MagicMock(return_value={"license_info": {"license_type": "open"}}),
+    )
+    @patch("django.conf.settings.AAP_API_URL", "http://aap.test")
+    def test_extra_data_calls_real_parent(self):
+        # The tests above mock the parent extra_data; this one keeps it real so a
+        # social-core signature change fails here instead of at login.
+        backend = AAPOAuth2(strategy=load_strategy())
+        response = {"id": 7, "access_token": "token", "is_superuser": True}
+
+        data = backend.extra_data(MagicMock(), "UUID", response, {}, {})
+
+        self.assertEqual(data["id"], 7)
+        self.assertTrue(data["aap_licensed"])
+        self.assertFalse(data["aap_system_auditor"])
+        self.assertTrue(data["aap_superuser"])
+
     @patch("django.conf.settings.AAP_API_URL", "http://aap.test")
     def test_auth_params_include_pkce_challenge(self):
         backend = AAPOAuth2()
@@ -220,20 +240,26 @@ class TestAAPOAuth2(WisdomServiceLogAwareTestCase):
         backend.strategy.random_string = lambda n: "a" * n
         backend.get_key_and_secret = MagicMock(return_value=("id", "secret"))
         backend.get_redirect_uri = MagicMock(return_value="http://localhost/callback")
+        # The session transaction get_or_create_state() creates before auth_params().
+        session[backend.transaction_key("test-state")] = {"state": "test-state", "timestamp": 0}
 
         params = backend.auth_params(state="test-state")
 
         self.assertIn("code_challenge", params)
         self.assertIn("code_challenge_method", params)
         self.assertEqual(params["code_challenge_method"], "S256")
+        self.assertEqual(
+            session[backend.transaction_key("test-state")]["code_verifier"],
+            "a" * backend.PKCE_DEFAULT_CODE_VERIFIER_LENGTH,
+        )
 
     @patch("django.conf.settings.AAP_API_URL", "http://aap.test")
     def test_auth_complete_params_include_pkce_verifier(self):
         backend = AAPOAuth2()
-        session = {"aap_code_verifier": "test-verifier"}
         backend.strategy = MagicMock()
         backend.strategy.setting = lambda name, default=None, **kwargs: default
-        backend.strategy.session_get = lambda k, d=None: session.get(k, d)
+        # The session transaction validate_state() leaves on the backend at callback.
+        backend._oauth2_transaction = {"state": "test-state", "code_verifier": "test-verifier"}
         backend.data = {"code": "auth-code"}
         backend.get_key_and_secret = MagicMock(return_value=("id", "secret"))
         backend.get_redirect_uri = MagicMock(return_value="http://localhost/callback")
@@ -381,7 +407,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
 
     @override_settings(SOCIAL_AUTH_OIDC_OIDC_ENDPOINT="http://127.0.0.1:1")
     def test_authenticate_returns_none_when_oidc_discovery_is_unreachable(self):
-        OpenIdConnectAuth.oidc_config.invalidate()
+        OpenIdConnectAuth.get_openid_configuration.invalidate()
         private_key = rsa.generate_private_key(
             public_exponent=65537, key_size=2048, backend=default_backend()
         )
@@ -396,7 +422,7 @@ class TestRHSSOAuthentication(WisdomServiceLogAwareTestCase):
             with self.assertLogs("auth", level="WARNING"):
                 self.assertIsNone(self.authentication.authenticate(request))
         finally:
-            OpenIdConnectAuth.oidc_config.invalidate()
+            OpenIdConnectAuth.get_openid_configuration.invalidate()
 
     @patch("ansible_ai_connect.users.auth.load_backend")
     def test_authenticate_rejects_token_without_matching_signing_key(self, mock_load_backend):
