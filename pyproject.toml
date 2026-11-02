@@ -48,7 +48,7 @@ dependencies = [
   'django-csp~=3.7',
   'django-ansible-base[api-documentation,jwt-consumer,resource-registry]>=2026.10.26',
   'filelock>=4.2.1',
-  'pyasn1==0.6.4',
+  'pyasn1==0.6.5',
 ]
 readme = "README.rst"
 license = {text = "Apache-2.0"}
