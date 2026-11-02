@@ -13,7 +13,7 @@ jobs:
   build:
     name: Unit Test and SonarCloud Scan
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # Only run for ansible organization
     if: github.repository_owner == 'ansible'
@@ -68,6 +68,10 @@ jobs:
         run: |
           sudo mkdir -p /etc/pki/tls/certs
           sudo ln -s /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+
+      - name: Check for missing migrations (Python)
+        run: |
+          python -m ansible_ai_connect.manage makemigrations --check --dry-run
 
       - name: Running Unit Tests (Python)
         run: |
