@@ -63,9 +63,9 @@ class AAPOAuth2(BaseOAuth2PKCE):
         resp_data = self.get_json(url, headers={"Authorization": f"bearer {access_token}"})
         return resp_data.get("results")[0]
 
-    def extra_data(self, user, uid, response, details=None, *args, **kwargs):
+    def extra_data(self, user, uid, response, details, pipeline_kwargs):
         """Overrides super extra_data to add license check"""
-        data = super().extra_data(user, uid, response, details=details, *args, **kwargs)
+        data = super().extra_data(user, uid, response, details, pipeline_kwargs)
         data["aap_licensed"] = self.user_has_valid_license(response.get("access_token"))
         data["aap_system_auditor"] = (
             response["is_system_auditor"] if "is_system_auditor" in response else False
