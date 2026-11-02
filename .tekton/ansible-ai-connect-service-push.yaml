@@ -57,7 +57,7 @@ spec:
         - name: name
           value: summary
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-summary:0.2
+          value: quay.io/konflux-ci/tekton-catalog/task-summary:0.2@sha256:62c465f052e15b8236aec09cc66710896e60386ea7b35c4888bb8273ff655b77
         - name: kind
           value: task
         resolver: bundles
@@ -76,7 +76,7 @@ spec:
       taskRef:
         params:
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:55fdfbe3b4a565aa58fc76d6209a3b69832f43373ee6e33555bb69423a8b9ceb
         - name: name
           value: slack-webhook-notification
         - name: kind
@@ -99,7 +99,7 @@ spec:
       taskRef:
         params:
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:55fdfbe3b4a565aa58fc76d6209a3b69832f43373ee6e33555bb69423a8b9ceb
         - name: name
           value: slack-webhook-notification
         - name: kind
@@ -276,7 +276,7 @@ spec:
         - name: name
           value: buildah-10gb
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-10gb:0.2
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-10gb:0.2@sha256:6c70791500d4578aae2ed21260fcae195a9b8964ba9ae4fb3908f01abde1f268
         - name: kind
           value: task
         resolver: bundles
@@ -303,7 +303,7 @@ spec:
         - name: name
           value: apply-tags
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1
+          value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:c5ed9ff3865b8805e6e17c0fd4fb601f92cafa2c6c11ee87e72884ee58088ac9
         - name: kind
           value: task
         resolver: bundles

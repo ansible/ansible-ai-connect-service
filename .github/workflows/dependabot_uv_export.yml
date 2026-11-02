@@ -31,12 +31,12 @@ jobs:
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.UV_EXPORT_PAT }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4
       - name: Regenerate requirements.txt from uv.lock
         run: ./tools/scripts/uv-export.sh
       - name: Commit and push if requirements.txt changed
