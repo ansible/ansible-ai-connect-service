@@ -16,6 +16,7 @@
 DRF Serializer classes for input/output validations and OpenAPI document generation.
 """
 
+import json
 import uuid
 
 import yaml
@@ -30,6 +31,65 @@ from drf_spectacular.utils import (
 from rest_framework import serializers
 
 from . import formatter as fmtr
+
+MAX_ADDITIONAL_CONTEXT_DEPTH = 5
+MAX_ADDITIONAL_CONTEXT_SIZE_BYTES = 64 * 1024
+MAX_VAR_INFILES = 20
+
+
+def validate_conversation_id(value):
+    try:
+        uuid.UUID(value)
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise serializers.ValidationError("Must be a valid UUID.") from exc
+
+
+class AdditionalContextField(serializers.DictField):
+    """A bounded dictionary field for client-supplied Ansible context."""
+
+    def to_internal_value(self, data):
+        value = super().to_internal_value(data)
+
+        # Walk iteratively so deeply nested input cannot exhaust Python's call stack.
+        pending = [(value, 1)]
+        while pending:
+            current, depth = pending.pop()
+            if depth > MAX_ADDITIONAL_CONTEXT_DEPTH:
+                raise serializers.ValidationError(
+                    f"Additional context cannot be nested more than "
+                    f"{MAX_ADDITIONAL_CONTEXT_DEPTH} levels."
+                )
+
+            if isinstance(current, dict):
+                for key, child in current.items():
+                    if key == "varInfiles":
+                        if not isinstance(child, dict):
+                            raise serializers.ValidationError("varInfiles must be an object.")
+                        if len(child) > MAX_VAR_INFILES:
+                            raise serializers.ValidationError(
+                                f"varInfiles cannot contain more than {MAX_VAR_INFILES} files."
+                            )
+                    if isinstance(child, (dict, list)):
+                        pending.append((child, depth + 1))
+            elif isinstance(current, list):
+                pending.extend(
+                    (child, depth + 1) for child in current if isinstance(child, (dict, list))
+                )
+
+        try:
+            context_size = len(
+                json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+            )
+        except (TypeError, ValueError, RecursionError, UnicodeEncodeError) as exc:
+            raise serializers.ValidationError(
+                "Additional context must be valid JSON data."
+            ) from exc
+
+        if context_size > MAX_ADDITIONAL_CONTEXT_SIZE_BYTES:
+            raise serializers.ValidationError(
+                f"Additional context cannot exceed {MAX_ADDITIONAL_CONTEXT_SIZE_BYTES} bytes."
+            )
+        return value
 
 
 class Metadata(serializers.Serializer):
@@ -66,7 +126,7 @@ class CompletionMetadata(Metadata):
         label="Ansible File Type",
         help_text="Ansible file type (playbook/tasks_in_role/tasks)",
     )
-    additionalContext = serializers.DictField(
+    additionalContext = AdditionalContextField(
         required=False,
         label="Additional Context",
         help_text="Additional context for completion API",
@@ -321,11 +381,14 @@ class RoleGenerationAction(PlaybookGenerationAction):
 class ChatRequestSerializer(serializers.Serializer):
     conversation_id = serializers.CharField(
         required=False,
+        max_length=64,
+        validators=[validate_conversation_id],
         label="conversation ID",
         help_text=("An ID that identifies the particular conversation is being requested for."),
     )
     query = serializers.CharField(
         required=True,
+        max_length=8192,
         label="Query string",
         help_text=("A query string to be sent to LLM."),
     )
@@ -581,7 +644,7 @@ class GenerationRoleRequestSerializer(serializers.Serializer):
             "Indicates whether the answer should also include an outline of the Ansible Role."
         ),
     )
-    additionalContext = serializers.DictField(
+    additionalContext = AdditionalContextField(
         required=False,
         allow_empty=True,
         label="inline suggestions",

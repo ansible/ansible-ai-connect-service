@@ -49,6 +49,11 @@ class TestSettings(SimpleTestCase, WisdomLogAwareMixin):
         self.assertGreater(REFRESH_TOKEN_EXPIRE_SECONDS, 0)
         self.assertLessEqual(REFRESH_TOKEN_EXPIRE_SECONDS, 864_000)
 
+    def test_database_cache_has_an_entry_limit(self):
+        from django.core.cache import caches
+
+        self.assertEqual(caches["default"]._max_entries, 10000)
+
     @patch.dict(
         os.environ,
         {
