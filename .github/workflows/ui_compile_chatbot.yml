@@ -1,5 +1,8 @@
 name: Chatbot - Build and Test
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
