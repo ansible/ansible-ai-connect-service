@@ -42,10 +42,8 @@ RUN /usr/bin/python3.12 -m pip --no-cache-dir install supervisor
 RUN /usr/bin/python3.12 -m venv /var/www/venv
 ENV PATH="/var/www/venv/bin:${PATH}"
 
-# Address GHSA-79v4-65xg-pq4g and the fact jwcrypto prevent us from pulling cryptography 44.0.1
-# Please remove once jwcrypto and cryptography can be both upgraded
+# Build headers for packages installed from source (e.g. uwsgi).
 RUN dnf install -y openssl-devel
-RUN /var/www/venv/bin/python3.12 -m pip --no-cache-dir install --no-binary=all cryptography==43.0.1
 
 # pip --require-hashes (implied by the hashed requirements.txt) cannot verify
 # VCS requirements. Install the pinned system-certifi fork first, then the
