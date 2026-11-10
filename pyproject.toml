@@ -103,6 +103,8 @@ constraint-dependencies = [
   'botocore>=1.43.117',
   # CVE: distrust eMudhra intermediate CA certificates (bz#2563296)
   'httplib2>=0.32.1',
+  # CVE-2026-118669
+  'oauthlib>=4.0.0',
 ]
 
 
