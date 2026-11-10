@@ -48,6 +48,11 @@ class TestApiTimeout(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
         model_client = HttpMetaData(mock_pipeline_config("http", timeout=123))
         self.assertEqual(123 * 2, model_client.task_gen_timeout(2))
 
+    def test_timeout_multiplier_is_capped(self):
+        model_client = HttpMetaData(mock_pipeline_config("http", timeout=123))
+        self.assertEqual(123 * 5, model_client.task_gen_timeout(5))
+        self.assertEqual(123 * 5, model_client.task_gen_timeout(10))
+
     def test_timeout_settings_is_none_wca(self):
         model_client = WCASaaSCompletionsPipeline(mock_pipeline_config("wca", timeout=None))
         self.assertIsNone(model_client.task_gen_timeout(1))

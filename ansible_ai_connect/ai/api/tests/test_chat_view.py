@@ -59,7 +59,7 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
 
     VALID_PAYLOAD_WITH_CONVERSATION_ID = {
         "query": "Hello",
-        "conversation_id": "ABC-123e4567-e89b-12d3-a456-426614174000",  # Non-UUIDs are fine here.
+        "conversation_id": "123e4567-e89b-12d3-a456-426614174000",
     }
 
     INVALID_PAYLOAD = {
@@ -416,30 +416,19 @@ class TestChatView(APIVersionTestCaseBase, WisdomServiceAPITestCaseBase):
                 "Invalid response",
             )
 
-    @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
-    def test_operational_telemetry_limit_exceeded(self):
-        q = "".join("hello " for i in range(6500))
+    def test_oversized_query_is_rejected(self):
+        q = "hello " * 6500
         payload = {
             "query": q,
         }
         self.client.force_authenticate(user=self.user)
-        with (
-            patch.object(
-                apps.get_app_config("ai"),
-                "get_model_pipeline",
-                Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
-            ),
-            self.assertLogs(logger="root", level="DEBUG") as log,
+        with patch.object(
+            apps.get_app_config("ai"),
+            "get_model_pipeline",
+            Mock(return_value=HttpChatBotPipeline(mock_pipeline_config("http"))),
         ):
-            r = self.query_with_no_error(payload)
-            self.assertEqual(r.status_code, 200)
-            segment_events = self.extractSegmentEventsFromLog(log)
-            self.assertEqual(
-                segment_events[0]["properties"]["rh_user_org_id"],
-                123,
-            )
-            # Verify that chat_response is not found
-            self.assertNotIn("chat_response", segment_events[0]["properties"])
+            response = self.query_with_no_error(payload)
+        self.assertEqual(response.status_code, 400)
 
     @override_settings(SEGMENT_WRITE_KEY="DUMMY_KEY_VALUE")
     def test_operational_telemetry_anonymizer(self):
