@@ -10,7 +10,7 @@ on:
       - main
       - stable-*
     paths:
-      - 'openapi.yaml'
+      - 'tools/openapi-schema/ansible-ai-connect-service.yaml'
       - 'changelogs/fragments/**'
 
 permissions:
@@ -21,5 +21,5 @@ jobs:
   enforce:
     uses: ansible/actions/.github/workflows/openapi-changelog-fragment.yml@216419226018c512a37ed606e85b9df6aca50fee
     with:
-      spec-paths: "openapi.yaml"
+      spec-paths: "tools/openapi-schema/ansible-ai-connect-service.yaml"
       fragment-dir: "changelogs/fragments"
