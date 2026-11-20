@@ -16,6 +16,7 @@
 Test serializers
 """
 
+import json
 from unittest.case import TestCase
 from unittest.mock import Mock
 from uuid import UUID
@@ -24,10 +25,16 @@ from django.test import override_settings
 from rest_framework import serializers
 
 from ansible_ai_connect.ai.api.serializers import (
+    MAX_ADDITIONAL_CONTEXT_DEPTH,
+    MAX_ADDITIONAL_CONTEXT_SIZE_BYTES,
+    MAX_VAR_INFILES,
+    ChatRequestSerializer,
+    CompletionMetadata,
     CompletionRequestSerializer,
     ContentMatchRequestSerializer,
     ContentMatchSerializer,
     FeedbackRequestSerializer,
+    GenerationRoleRequestSerializer,
     SuggestionQualityFeedback,
 )
 
@@ -70,6 +77,75 @@ class CompletionRequestSerializerTest(TestCase):
             serializer.validate({"prompt": "- name: [This is a list]"})
         with self.assertRaises(serializers.ValidationError):
             serializer.validate({"prompt": "- name: {This is a dict}"})
+
+
+class ChatRequestSerializerTest(TestCase):
+    def test_query_length_is_limited(self):
+        valid = ChatRequestSerializer(data={"query": "q" * 8192})
+        self.assertTrue(valid.is_valid(), valid.errors)
+
+        invalid = ChatRequestSerializer(data={"query": "q" * 8193})
+        self.assertFalse(invalid.is_valid())
+
+    def test_conversation_id_must_be_a_bounded_uuid(self):
+        valid = ChatRequestSerializer(
+            data={"query": "hello", "conversation_id": "123e4567-e89b-12d3-a456-426614174000"}
+        )
+        self.assertTrue(valid.is_valid(), valid.errors)
+
+        for conversation_id in ("not-a-uuid", "a" * 65):
+            with self.subTest(conversation_id=conversation_id):
+                invalid = ChatRequestSerializer(
+                    data={"query": "hello", "conversation_id": conversation_id}
+                )
+                self.assertFalse(invalid.is_valid())
+
+
+class AdditionalContextValidationTest(TestCase):
+    def completion_metadata(self, context):
+        return CompletionMetadata(data={"additionalContext": context})
+
+    def test_limits_nesting_depth(self):
+        context = "leaf"
+        for _ in range(MAX_ADDITIONAL_CONTEXT_DEPTH):
+            context = {"nested": context}
+        valid = self.completion_metadata(context)
+        self.assertTrue(valid.is_valid(), valid.errors)
+
+        context = {"nested": context}
+        invalid = self.completion_metadata(context)
+        self.assertFalse(invalid.is_valid())
+
+    def test_limits_serialized_size_in_utf8_bytes(self):
+        empty_context = {"payload": ""}
+        overhead = len(json.dumps(empty_context, separators=(",", ":")).encode("utf-8"))
+        context = {"payload": "x" * (MAX_ADDITIONAL_CONTEXT_SIZE_BYTES - overhead)}
+        valid = self.completion_metadata(context)
+        self.assertTrue(valid.is_valid(), valid.errors)
+
+        context["payload"] += "x"
+        invalid = self.completion_metadata(context)
+        self.assertFalse(invalid.is_valid())
+
+    def test_limits_var_infiles_in_completion_and_role_generation(self):
+        def make_context(file_count):
+            return {
+                "playbookContext": {
+                    "varInfiles": {f"vars-{index}.yml": {} for index in range(file_count)}
+                }
+            }
+
+        valid = self.completion_metadata(make_context(MAX_VAR_INFILES))
+        self.assertTrue(valid.is_valid(), valid.errors)
+
+        too_many = make_context(MAX_VAR_INFILES + 1)
+        invalid = self.completion_metadata(too_many)
+        self.assertFalse(invalid.is_valid())
+
+        role_generation = GenerationRoleRequestSerializer(
+            data={"text": "make a role", "additionalContext": too_many}
+        )
+        self.assertFalse(role_generation.is_valid())
 
     def test_validate_multitask_commercial(self):
         user = Mock(rh_user_has_seat=True)
