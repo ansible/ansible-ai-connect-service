@@ -105,6 +105,9 @@ constraint-dependencies = [
   'httplib2>=0.32.1',
   # CVE-2026-118669
   'oauthlib>=4.0.0',
+  # wcmatch < 11.2 backtracks excessively in multi-wildcard matching; 12.x has
+  # BREAK changes to extglob grouping, so keep this a security-only lift
+  'wcmatch>=11.2,<12',
 ]
 
 
